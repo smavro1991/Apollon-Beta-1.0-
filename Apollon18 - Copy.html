@@ -1,0 +1,4202 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Apollon — Διαχείριση με Tabs (Local Storage) — Modal Forms</title>
+<style>
+  :root{--teal:#0c7a7a;--bg:#f3f7f7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:#122}
+  header{background:var(--teal);color:#fff;padding:14px 18px;font-weight:700}
+  .wrap{display:grid;grid-template-columns:1.1fr 1.4fr;gap:18px;padding:18px;max-width:1280px;margin:auto}
+  .card{background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:14px}
+  h2{margin:6px 0 10px 0;font-size:18px;color:#0c5757}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input,select,textarea,button{font:inherit}
+  input,select,textarea{width:100%;padding:10px;border:1px solid #cfd9d9;border-radius:8px;background:#fbffff}
+  textarea{min-height:84px;resize:vertical}
+  label{font-size:12px;color:#456}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .btn{padding:10px 14px;border-radius:8px;border:0;cursor:pointer}
+  .btn.primary{background:var(--teal);color:#fff}
+  .btn.light{background:#e6f2f2}
+  .btn.warn{background:#ffe8e8;color:#8a1111}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  thead th{font-size:12px;text-align:left;color:#567;border-bottom:1px solid #e2eeee;padding:8px}
+  tbody td{padding:8px;border-bottom:1px dashed #eef4f4;font-size:14px}
+  tr:hover{background:#f6fbfb}
+  .muted{color:#6b8181;font-size:12px}
+  .split{display:flex;gap:10px;align-items:center}
+  .grow{flex:1}
+  input[type="file"]{display:none}
+  .file-label{padding:10px 14px;background:#e6f2f2;border-radius:8px;cursor:pointer;display:inline-block}
+  /* Tabs */
+  .tabs{display:flex;border-bottom:2px solid #e2eeee;margin-bottom:10px}
+  .tab-btn{padding:10px 14px;background:#f5fafa;border:none;cursor:pointer;font-weight:600;color:#345;border-radius:10px 10px 0 0;margin-right:6px}
+  .tab-btn.active{background:#0c7a7a;color:#fff}
+  .tab-btn:disabled{opacity:.4}
+  .tab-pane{display:none}
+  .tab-pane.active{display:block}
+  .kpi{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+  .kpi > div{background:#eef7f7;border-radius:10px;padding:8px 12px;font-size:13px;color:#234}
+  #yearFilter{width:180px;flex:0 0 auto}
+  /* Ενότητες μέσα στα tabs */
+  .section{margin:14px 0 18px;padding:12px;background:#fafdfd;border:1px solid #e6efef;border-radius:12px}
+  .section-header{display:flex;align-items:center;gap:10px;justify-content:space-between;position:sticky;top:0;background:#fafdfd;padding-bottom:6px;border-bottom:1px solid #e8f2f2;z-index:1}
+  .section-title{margin:0;font-size:16px;color:#0c5757}
+  .section-meta{font-size:12px;color:#6b8181}
+  .section-body{padding-top:8px}
+  .scroll-area{max-height:260px;overflow:auto;border:1px dashed #eef4f4;border-radius:10px;background:#fff;padding:6px}
+  .section .actions{margin-top:10px}
+th.sel, td.sel { width: 36px; text-align: center; }
+.enrSelect { cursor: pointer; }
+/* "χεράκι" σε όλη τη γραμμή */
+#enrTbl tbody tr,
+#payTbl tbody tr {
+  cursor: pointer;
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;   /* κάθετη στοίχιση στη μέση */
+  gap: 8px;              /* κενό ανάμεσα σε checkbox και label */
+}
+.inline-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+/* χεράκι σε όλο το κελί επιλογής και στα παιδιά του (radio κ.λπ.) */
+#payTbl td.sel, #payTbl td.sel *,
+#enrTbl td.sel, #enrTbl td.sel * {
+  cursor: pointer;
+}
+
+/* Hand cursor σε όλη τη γραμμή (αν δεν το έχεις ήδη) */
+#tbl tbody tr,
+#enrTbl tbody tr,
+#payTbl tbody tr {
+  cursor: pointer;
+}
+
+/* Hover (προαιρετικό, απαλό) */
+#tbl tbody tr:hover,
+#enrTbl tbody tr:hover,
+#payTbl tbody tr:hover {
+  background: #f3fbfb;
+}
+
+/* Επιλεγμένη γραμμή (active) — πιο έντονο από το hover */
+#tbl tbody tr.active {
+  background-color: #e8f6f6;   /* ανοιχτό γαλάζιο για επιλεγμένο */
+}
+#enrTbl tbody tr.active,
+#payTbl tbody tr.active {
+  background: #e8f6f6;
+}
+
+/* Προαιρετικά: ελαφρύς τόνος και στο separator της active */
+
+#tbl tbody tr.active td {
+  border-bottom-color: #cfe9e9; /* λίγο πιο σκούρο separator */
+}
+#enrTbl tbody tr.active td,
+#payTbl tbody tr.active td {
+  border-bottom-color: #cfe9e9;
+}
+
+/* Active row (αν δεν το έχεις) */
+#chgTbl tbody tr { cursor: pointer; }
+#chgTbl tbody tr.active { background: #e8f6f6; }
+
+/* Μικρά badges κατάστασης */
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;background:#eef7f7;color:#234}
+.badge.paid{background:#e8fbe8;color:#295b29}
+.badge.partial{background:#fff4d6;color:#7a5a00}
+.badge.open{background:#ffe8e8;color:#8a1111}
+.badge.locked{box-shadow: inset 0 0 0 1px #b6c; }
+.badge.adjust { background:#e9e8ff; color:#37307a }
+.badge.credit { background:#e8fbe8; color:#295b29 } /* πίστωση (-) */
+
+
+  /* === Modal === */
+  .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;padding:18px}
+  .modal.open{display:block}
+  .modal-card{background:#fff;border-radius:14px;max-width:720px;margin:auto;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+  .modal-header{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:8px}
+  .modal-title{margin:0;color:#0c5757;font-size:18px}
+  .modal-close{border:0;background:#f2f6f6;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700}
+
+  @media (max-width: 920px){ .wrap{grid-template-columns:1fr} }
+
+.alloc-panel { margin-top:12px; border:1px solid #e2e8f0; border-radius:10px; }
+.alloc-header, .alloc-footer { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:#f7fafc; border-bottom:1px solid #e2e8f0; }
+.alloc-footer { border-top:1px solid #e2e8f0; border-bottom:0; }
+.alloc-body { max-height:230px; overflow:auto; }
+.alloc-table { width:100%; border-collapse:collapse; }
+.alloc-table th, .alloc-table td { padding:8px; border-bottom:1px solid #edf2f7; font-size:14px; }
+.alloc-table td .money { white-space:nowrap; }
+.alloc-table input[type="number"] { width:110px; }
+
+/* Sidebar + Hamburger */
+.app-header{display:flex;align-items:center;gap:10px}
+.hamburger{appearance:none;border:none;background:transparent;font-size:22px;line-height:1;color:#fff;cursor:pointer;padding:4px 8px;border-radius:8px}
+.hamburger:focus{outline:2px solid rgba(255,255,255,.5);outline-offset:2px}
+.brand{font-weight:800}
+.header-sub{opacity:.8;font-weight:600;margin-left:6px}
+
+.sidebar{position:fixed;inset:0 auto 0 0;width:270px;background:#0b5d5d;color:#f2ffff;transform:translateX(-100%);transition:transform .25s ease;z-index:1000;box-shadow:2px 0 20px rgba(0,0,0,.2)}
+.sidebar.open{transform:translateX(0)}
+.sidebar .side-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sidebar .title{font-size:16px;font-weight:800}
+.sidebar .close{appearance:none;border:none;background:transparent;color:#eaffff;font-size:22px;cursor:pointer}
+
+.menu{list-style:none;margin:0;padding:8px}
+.menu li a{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;color:#eaffff;text-decoration:none}
+.menu li a:hover{background:rgba(255,255,255,.08)}
+.menu small{opacity:.8}
+
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:saturate(80%) blur(1px);z-index:900;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.backdrop.show{opacity:1;pointer-events:auto}
+
+@media (max-width:720px){
+  header{padding:12px 14px}
+}
+
+
+/* Header layout: left (hamburger+brand) — right (user box) */
+.app-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-right{display:flex;align-items:center;gap:10px}
+
+/* Login overlay */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#0b5d5d 0%, #0b4b5d 100%);display:none;align-items:center;justify-content:center;z-index:2000}
+#loginScreen.show{display:flex}
+.login-card{width:min(92vw,420px);background:#ffffff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.2);padding:20px}
+.login-card h2{margin:0 0 8px 0}
+.login-card p.sub{margin:0 0 16px 0;color:#444;opacity:.8}
+.login-form{display:grid;grid-template-columns:1fr;gap:10px}
+.login-form label{font-size:12px;font-weight:700;color:#0b4b5d}
+.login-form input{border:1px solid #cfd8dc;border-radius:10px;padding:10px 12px;font-size:14px}
+.login-actions{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.login-actions .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700}
+.btn-primary{background:#0b5d5d;color:#eaffff}
+.btn-ghost{background:transparent;color:#0b5d5d}
+.login-hint{margin-top:8px;font-size:12px;color:#555}
+.login-error{margin-top:8px;color:#b00020;font-size:13px;display:none}
+.login-error.show{display:block}
+
+/* User box + power button */
+.userbox{display:flex;align-items:center;gap:8px;color:#eaffff}
+.userbox .username{font-weight:700;opacity:.95}
+
+#massAllocAutoBtn,
+#massAllocClearBtn {
+  display: none !important;
+}
+
+
+/* POWER BUTTON — CSS icon, χωρίς κείμενο μέσα στο <button> */
+.power-btn{
+  appearance:none;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  border-radius:50%;
+  width:28px;
+  height:28px;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.power-btn:hover{background:rgba(255,255,255,.1)}
+.power-btn:focus{outline:2px solid rgba(255,255,255,.5);outline-offset:2px}
+
+/* Κύκλος */
+.power-btn::before{
+  content:"";
+  position:absolute;
+  width:16px;
+  height:16px;
+  border:2px solid #eaffff;
+  border-radius:50%;
+  box-sizing:border-box;
+}
+
+/* Κάθετη γραμμή */
+.power-btn::after{
+  content:"";
+  position:absolute;
+  width:2px;
+  height:8px;
+  background:#eaffff;
+  top:5px;                 /* πάνω στο κέντρο */
+  left:50%;
+  transform:translateX(-50%);
+}
+
+#resetBtn,
+#enrClearBtn {
+  display: none !important;
+}
+
+/* ===== Receipt (ΜΗ φορολογικό) ===== */
+.receipt { font: 12pt/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#111; width: 100%; max-width: 720px; margin: 0 auto; }
+.receipt .r-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; border-bottom:1px solid #eee; padding-bottom:8px; }
+.receipt .r-title { font-size:16pt; margin:0; }
+.receipt .r-sub { color:#666; font-size:10pt; margin-top:2px; }
+.receipt .r-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; margin:10px 0; }
+.receipt .r-grid div { font-size:11pt; }
+.receipt table { width:100%; border-collapse:collapse; margin:10px 0; }
+.receipt th, .receipt td { border-bottom:1px solid #eee; padding:6px 4px; font-size:11pt; text-align:left; }
+.receipt tfoot td { border-top:2px solid #111; font-weight:700; }
+.receipt .muted { color:#666; font-size:10pt; }
+.receipt .r-foot { margin-top:10px; display:flex; justify-content:space-between; gap:10px; font-size:10pt; color:#444; }
+
+/* Thermal 80mm (προαιρετικό) — αν θες θερμικό εκτυπωτή */
+.receipt.thermal { width: 76mm; max-width: 76mm; }
+.receipt.thermal .r-head { border-bottom:1px dashed #ccc; }
+.receipt.thermal th, .receipt.thermal td { border-bottom:1px dashed #eee; }
+
+/* Print rules */
+@media print {
+  .no-print, header, .wrap, .modal { display:none !important; }
+  #reportArea { display:block; }
+  @page { size: A5 portrait; margin: 10mm; } /* άλλαξε σε size: 80mm auto; για thermal */
+}
+
+/* Προαιρετικά: κόκκινο στο hover για “έξοδο” */
+.power-btn:hover::before{ border-color:#ff5252; }
+.power-btn:hover::after{ background:#ff5252; }
+
+.alloc-table .row-discount { background: rgba(255,0,0,0.03); }
+.alloc-table .row-discount .neg { font-weight: 600; }
+.alloc-table .muted { color:#666; font-style: italic; }
+
+#chargesSection { display:none; }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-left">
+    <button id="menuBtn" class="hamburger" aria-label="Άνοιγμα μενού" title="Μενού">☰</button>
+    <span class="brand">Apollon</span>
+    <span class="header-sub">— Σπουδαστές • Εγγραφές • Πληρωμές</span>
+  </div>
+  <div class="header-right">
+    <div class="userbox">
+      <span class="username" id="userName">—</span>
+        <button id="logoutBtn" class="power-btn" title="Αποσύνδεση" aria-label="Αποσύνδεση"></button>
+
+    </div>
+  </div>
+</header>
+
+<div id="loginScreen" aria-hidden="true">
+  <div class="login-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <h2 id="loginTitle" style="text-align:center;">Apollon</h2>
+    <p class="sub">Συνδέσου για να χρησιμοποιήσεις το Apollon.</p>
+    <form id="loginForm" class="login-form">
+      <div>
+        <label for="lgUser">Όνομα χρήστη</label>
+        <input id="lgUser" name="username" type="text" autocomplete="username" required placeholder="π.χ. admin">
+      </div>
+      <div>
+        <label for="lgPass">Κωδικός</label>
+        <input id="lgPass" name="password" type="password" autocomplete="current-password" required placeholder="π.χ. 1234">
+      </div>
+      <div class="login-actions">
+        <button type="submit" class="btn btn-primary">Είσοδος</button>
+        <button type="button" id="resetDefaultBtn" class="btn btn-ghost" title="Δημιουργεί/επαναφέρει τον admin χρήστη">Reset admin</button>
+      </div>
+      <div class="login-error" id="loginErr">Λάθος στοιχεία. Δοκίμασε ξανά.</div>
+      <div class="login-hint">Προκαθοριστικά: <strong>admin / 1234</strong></div>
+    </form>
+  </div>
+</div>
+
+<aside id="sidebar" class="sidebar" aria-hidden="true">
+  <div class="side-top">
+    <div class="title">Apollon — Μενού</div>
+    <button class="close" id="sideClose" aria-label="Κλείσιμο">×</button>
+  </div>
+  <ul class="menu">
+    <li><a href="#" class="menu-link" data-tab="tab-student">👤 <span>Στοιχεία</span></a></li>
+    <li><a href="#" class="menu-link" data-tab="tab-enrollments">📝 <span>Εγγραφές</span></a></li>
+    <li><a href="#" class="menu-link" data-tab="tab-payments">💳 <span>Πληρωμές</span></a></li>
+    <li><a href="#" class="menu-link" data-action="backup">🗄️ <span>Backup / Export <small>(JSON)</small></span></a></li>
+    <li><a href="#" class="menu-link" data-action="restore">📥 <span>Restore / Import <small>(JSON)</small></span></a></li>
+    <li><a href="#" class="menu-link" data-action="clear">🧹 <span>Καθαρισμός δεδομένων</span></a></li>
+    <li><a href="catalogs.html" class="menu-link">📚 <span>Λίστες (Σχολές/Τάξεις/Έτη)</span></a></li>
+    <li><a href="#" class="menu-link" data-action="about">ℹ️ <span>Σχετικά</span></a></li>
+  </ul>
+</aside>
+<div id="backdrop" class="backdrop"></div>
+
+<div class="wrap">
+  <!-- ΑΡΙΣΤΕΡΑ: ΛΙΣΤΑ ΣΠΟΥΔΑΣΤΩΝ -->
+  <section class="card">
+    <div class="split">
+      <h2 class="grow">Σπουδαστές</h2>
+      <span class="muted" id="count">0</span>
+    </div>
+
+    <div class="row">
+      <input id="q" placeholder="Αναζήτηση σε όνομα, επώνυμο, τηλέφωνο ή email…" />
+    </div>
+
+    <table id="tbl">
+      <thead><tr>
+        <th>Επώνυμο</th><th>Όνομα</th><th>Ημ/νία Γέννησης</th><th>Τηλέφωνο</th><th>Email</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="actions">
+      <button class="btn light" id="newBtn">Νέα Καταχώρηση</button>
+      <button class="btn warn" id="delBtn" disabled>Διαγραφή</button>
+      <span class="grow"></span>
+      <button class="btn light" id="registryBtn" title="Μαθητολόγιο">Μαθητολόγιο</button>
+      <button class="btn light" id="exportBtn">Backup (JSON)</button>
+      <label for="importInp" class="file-label">Επαναφορά</label>
+      <input type="file" id="importInp" accept="application/json" />
+    </div>
+  </section>
+
+  <!-- ΔΕΞΙΑ: ΚΑΡΤΕΛΑ ΣΠΟΥΔΑΣΤΗ με TABS -->
+  <section class="card">
+    <div class="split">
+      <h2 class="grow" id="studentHeading">Κανένας σπουδαστής επιλεγμένος</h2>
+      <select id="yearFilter" title="Διδακτικό έτος"></select>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-student">Στοιχεία</button>
+      <button class="tab-btn" data-tab="tab-enrollments" id="enrollmentsTabBtn" disabled>Εγγραφές</button>
+      <button class="tab-btn" data-tab="tab-payments" id="paymentsTabBtn" disabled>Πληρωμές</button>
+    </div>
+
+    <div class="tab-content">
+      <!-- TAB: ΣΤΟΙΧΕΙΑ -->
+      <div id="tab-student" class="tab-pane active">
+        <h2 id="formTitle">Καταχώρηση Σπουδαστή</h2>
+        <form id="form" autocomplete="off">
+          <input type="hidden" id="id" />
+          <div class="grid-2">
+            <div><label>Επώνυμο*</label><input id="surname" required /></div>
+            <div><label>Όνομα*</label><input id="name" required /></div>
+          </div>
+          
+          <div class="grid-3">
+             <div><label>Όνομα Πατέρα</label><input id="fatherName" /></div>
+             <div><label>Ημερομηνία Γέννησης</label><input id="dob" type="date" /></div>
+             <div><label>Τόπος Γέννησης</label><input id="birthPlace" /></div>
+          </div>
+
+          <div class="grid-2">
+            <div><label>Τηλέφωνο</label><input id="phone" /></div>
+            <div><label>Email</label><input id="email" type="email" /></div>
+          </div>
+          <div class="grid-3">
+            <div><label>ΑΜΚΑ</label><input id="amka" /></div>
+            <div><label>Διεύθυνση</label><input id="address" /></div>
+            <div><label>Πόλη</label><input id="city" /></div>            
+          </div>
+          <div><label>Σχόλια</label><textarea id="notes"></textarea></div>
+          <div class="actions">
+            <button class="btn primary" type="submit">Αποθήκευση</button>
+            <button class="btn light" type="button" id="resetBtn">Καθαρισμός</button>
+            <span class="grow"></span>
+<button class="btn light" id="pdfBtn" title="Εξαγωγή PDF" type="button">PDF Report</button>
+
+          </div>
+          <p class="muted">Τα δεδομένα σπουδαστών αποθηκεύονται τοπικά.</p>
+        </form>
+      </div>
+
+      <!-- TAB: ΕΓΓΡΑΦΕΣ -->
+      <div id="tab-enrollments" class="tab-pane">
+        <div class="section">
+          <div class="section-header">
+            <h3 class="section-title">Εγγραφές</h3>
+            <div class="section-meta">Έτος: <span id="enrYearEcho">—</span> • Πλήθος: <span id="enrCount">0</span></div>
+          </div>
+          <div class="section-body">
+            <div class="scroll-area">
+              <table id="enrTbl" style="margin:0;">
+<thead>
+  <tr>
+    <th class="sel"></th>
+    <th>Έτος</th><th>Σχολή</th><th>Τάξη</th><th>Διδάσκων</th><th>Ημ/νία Εγγραφής</th><th></th>
+  </tr>
+</thead>
+
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="actions">
+              <button class="btn light" id="enrNewBtn" disabled>Νέα Εγγραφή</button>
+              <button class="btn warn" id="enrDelBtn" disabled>Διαγραφή</button>
+              <button class="btn light" id="enrPlanBtn" disabled>Πλάνο</button> <!-- ΝΕΟ -->
+              <button class="btn light" id="enrExamBtn" disabled>Εξετάσεις</button>
+            </div>
+          </div>
+        </div>
+<!-- Χρεώσεις Πλάνου (ανά Εγγραφή) -->
+<div class="section" id="chargesSection" style="display:none;">
+  <div class="section-header">
+    <h3 class="section-title">Χρεώσεις Πλάνου</h3>
+    <div class="section-meta">
+      Πλήθος: <span id="chgCount">0</span> • Οφειλόμενο: <span id="chgDue">0€</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="scroll-area">
+      <table id="chgTbl" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Μήνας</th><th>Περιγραφή</th><th>Τύπος</th><th>Λήξη</th><th>Ποσό</th><th>Κατάσταση</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button class="btn light" id="chgRefreshBtn">Ανανέωση</button>
+      <button class="btn light" id="chgLockBtn" disabled>Κλείδωμα</button>
+      <button class="btn light" id="chgUnlockBtn" disabled>Ξεκλείδωμα</button>
+      <button class="btn light" id="chgAdjBtn" disabled>Προσθήκη Adjustment</button>
+    </div>
+  </div>
+</div>
+      </div>
+
+      <!-- TAB: ΠΛΗΡΩΜΕΣ -->
+      <div id="tab-payments" class="tab-pane">
+        <div class="section">
+          <div class="section-header">
+            <h3 class="section-title">Πληρωμές (Δίδακτρα)</h3>
+            <div class="section-meta">Έτος: <span id="payYearEcho">—</span></div>
+          </div>
+          <div class="section-body">
+            <div class="kpi" style="margin-top:0;">
+              <div>Σύνολο: <b id="sumTotal">0€</b></div>
+              <div>Πληρωμές: <b id="sumCount">0</b></div>
+              <div>Τελευταία: <b id="sumLast">—</b></div>
+            </div>
+            <div class="scroll-area" style="margin-top:8px;">
+              <table id="payTbl" style="margin:0;">
+<thead><tr>
+  <th class="sel"></th>
+  <th>Ημ/νία</th><th>Μήνας</th><th>Ποσό</th><th>Τρόπος</th><th></th>
+</tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+<div class="actions">
+<button class="btn light" id="payNewBtn" disabled style="display:none;">Νέα Πληρωμή</button>
+<button class="btn light" id="payReceiptBtn" disabled title="Εκτύπωση απόδειξης">Απόδειξη</button>
+  <button class="btn warn" id="payDelBtn" disabled>Διαγραφή</button>
+  <span class="grow"></span>
+  <button class="btn light" id="massPayBtn" disabled>Νέα Πληρωμή</button>
+</div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ========== MODALS ========== -->
+<!-- Enrollment Modal -->
+<div id="enrModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title" id="enrFormTitle">Καταχώρηση Εγγραφής</h3>
+      <button class="modal-close" id="enrClose">✕</button>
+    </div>
+    <form id="enrForm" autocomplete="off">
+      <input type="hidden" id="enrId" />
+      <div class="grid-3">
+        <div><label>Διδακτικό Έτος</label><select id="enrYear"></select></div>
+  <div><label>Σχολή</label><select id="enrSchool" required></select></div>
+  <div><label>Τάξη</label><select id="enrClass" required></select></div>
+      </div>
+      <div class="grid-3">
+        <div><label>Έτος Φοίτησης</label><select id="enrGovYear" required></select></div>
+        <div><label>Εξάμηνο</label>
+          <select id="enrSemester"><option value="">—</option><option>Α</option><option>Β</option></select>
+        </div>
+        <div><label>Ημ/νία Εγγραφής</label><input id="enrDate" type="date" /></div>
+      </div>
+<div class="grid-2"> <div><label>Διδάσκων</label><input id="enrTeacher" /></div> <div class="inline-check" style="align-items:end;"> <input id="enrGovReg" type="checkbox" /> <label for="enrGovReg">Εγγραφή στο υπουργείο</label> </div> </div>
+
+
+      <div><label>Παρατηρήσεις</label><textarea id="enrNotes"></textarea></div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="enrSaveBtn" disabled>Αποθήκευση</button>
+        <button class="btn light" type="button" id="enrClearBtn">Καθαρισμός</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Class Registry (Μαθητολόγιο) Modal -->
+<div id="registryModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Μαθητολόγιο</h3>
+      <button class="modal-close" id="registryClose">✕</button>
+    </div>
+
+    <form id="registryForm" autocomplete="off">
+      <div class="grid-3">
+        <!-- Διδακτικό έτος -->
+        <div>
+          <label>Διδακτικό Έτος</label>
+          <select id="regYear" required></select>
+        </div>
+
+        <!-- Εξάμηνο (βάσει Ημ/νίας Εγγραφής) -->
+        <div>
+          <label>Εξάμηνο <small class="muted">(με βάση την Ημ/νία Εγγραφής)</small></label>
+          <select id="regSemester" required>
+            <option value="A">Α</option>
+            <option value="B">Β</option>
+          </select>
+        </div>
+
+        <!-- Υπουργείο -->
+        <div>
+          <label>Εγγραφή στο Υπουργείο</label>
+          <select id="regGov" required>
+            <option value="both">Και τα δύο</option>
+            <option value="yes">Ναι</option>
+            <option value="no">Όχι</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" type="submit" id="registryRunBtn">Εξαγωγή σε Pdf</button>
+        <button class="btn light" type="button" id="registryWordBtn">Εξαγωγή σε Word</button>
+        <button class="btn light" type="button" id="registryPreviewBtn">Προεπισκόπηση</button>
+      </div>
+
+
+    </form>
+  </div>
+</div>
+
+
+<!-- Payment Modal -->
+<div id="payModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title" id="payFormTitle">Καταχώρηση Πληρωμής</h3>
+      <button class="modal-close" id="payClose">✕</button>
+    </div>
+    <form id="payForm" autocomplete="off">
+      <input type="hidden" id="payId" />
+<!-- 1η σειρά: Ημερομηνία • Ποσό • Τρόπος -->
+<div class="grid-3">
+  <div>
+    <label>Ημερομηνία</label>
+    <input id="payDate" type="date" />
+  </div>
+  <div>
+    <label>Ποσό (€)</label>
+    <input id="payAmount" type="number" step="0.01" min="0" required />
+  </div>
+  <div>
+    <label>Τρόπος Πληρωμής</label>
+    <select id="payMethod">
+      <option>Μετρητά</option><option>Κάρτα</option><option>Τράπεζα</option><option>POS</option><option>Άλλο</option>
+    </select>
+  </div>
+</div>
+
+<!-- 2η σειρά: Αιτιολογία • Batch ID -->
+<div class="grid-2">
+  <div>
+    <label>Αιτιολογία</label>
+    <input id="payReason" placeholder="Δίδακτρα / Εγγραφή / Εξέταση…" />
+  </div>
+  <div>
+    <label>Batch ID</label>
+    <input id="payBatchId" type="text" disabled placeholder="—">
+  </div>
+</div>
+
+<!-- ===== Allocations (κατανομή ποσού σε ανοιχτές χρεώσεις) ===== -->
+<div id="allocPanel" class="alloc-panel">
+  <div class="alloc-header">
+    <div><b>Κατανομή πληρωμής</b></div>
+    <div class="alloc-tools">
+      <button class="btn light" type="button" id="allocAutoBtn">Auto-FIFO</button>
+      <button class="btn light" type="button" id="allocClearBtn">Μηδενισμός</button>
+    </div>
+  </div>
+  <div class="alloc-body">
+    <table class="alloc-table">
+      <thead>
+        <tr>
+          <th>Μήνας</th>
+          <th>Περιγραφή</th>
+          <th>Υπόλοιπο</th>
+          <th>Κάλυψη</th>
+        </tr>
+      </thead>
+      <tbody id="allocTbody"><tr><td colspan="5" class="muted">Δεν υπάρχουν ανοιχτές χρεώσεις.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="alloc-footer">
+    <div>Σύνολο χρέωσης: <b id="allocPayAmount">0.00€</b></div>
+    <div>Έκπτωση: <b id="allocSum">0.00€</b></div>
+    <div>Ποσό πληρωμής: <b id="allocRest">0.00€</b></div>
+  </div>
+</div>
+
+<!-- ===== Read-only Allocations for Batch Payment ===== -->
+<div id="allocRoPanel" class="alloc-panel" style="display:none;">
+  <div class="alloc-header">
+    <div><b>Χρεώσεις αυτής της πληρωμής</b></div>
+    <div id="allocRoMeta" class="muted">Batch: —</div>
+  </div>
+  <div class="alloc-body">
+    <table class="alloc-table">
+      <thead>
+        <tr>
+          <th>Μήνας</th>
+          <th>Περιγραφή</th>
+          <th>Λήξη</th>
+          <th>Ποσό Χρέωσης</th>
+          <th>Καλύφθηκε</th>
+          <th>Κατάσταση</th>
+        </tr>
+      </thead>
+      <tbody id="allocRoTbody">
+        <tr><td colspan="6" class="muted">Δεν υπάρχουν κατανομές για αυτή την πληρωμή.</td></tr>
+      </tbody>
+    </table>
+  </div>
+<div class="alloc-footer">
+  <div>Σύνολο χρέωσης: <b id="allocRoSum">0.00€</b></div>
+  <div>Έκπτωση: <b id="allocRoDisc">0.00€</b></div>
+  <div>Τελικό ποσό χρέωσης: <b id="allocRoFinal">0.00€</b></div>
+</div>
+
+</div>
+
+      <div class="actions">
+        <button class="btn primary" type="submit" id="paySaveBtn" disabled>Αποθήκευση</button>
+        <button class="btn light" type="button" id="payClearBtn">Καθαρισμός</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Mass Payment Modal (Στρώση Β) -->
+<div id="massPayModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Μαζική Πληρωμή (ανά μαθητή)</h3>
+      <button class="modal-close" id="massPayClose">✕</button>
+    </div>
+    <form id="massPayForm" autocomplete="off">
+      <div class="grid-3">
+        <div>
+          <label>Ημερομηνία</label>
+          <input id="massPayDate" type="date" />
+        </div>
+        <div>
+          <label>Ποσό (€)</label>
+          <input id="massPayAmount" type="number" step="0.01" min="0" required />
+        </div>
+        <div>
+          <label>Τρόπος</label>
+          <select id="massPayMethod">
+            <option>Μετρητά</option><option>Κάρτα</option><option>Τράπεζα</option><option>POS</option><option>Άλλο</option>
+          </select>
+        </div>
+      </div>
+
+<div class="grid-3">
+  <div>
+    <label>Αιτιολογία</label>
+    <input id="massPayReason" placeholder="Μαζική εξόφληση διδάκτρων" />
+  </div>
+  <div>
+    <label>Μήνας</label>
+    <select id="massMonth"></select>
+  </div>
+  <div>
+    <label>Έκπτωση (€)</label>
+    <input id="massDiscountInput" type="number" step="0.01" min="0" />
+  </div> <!-- κενό για να κρατήσει το grid ευθυγραμμισμένο -->
+</div>
+
+      <div class="alloc-panel">
+        <div class="alloc-header">
+          <div><b>Κατανομή (όλες οι ανοιχτές χρεώσεις μαθητή)</b></div>
+          <div class="alloc-tools">
+            <button class="btn light" type="button" id="massAllocAutoBtn">Auto-FIFO</button>
+            <button class="btn light" type="button" id="massAllocClearBtn">Μηδενισμός</button>
+          </div>
+        </div>
+        <div class="alloc-body">
+          <table class="alloc-table">
+            <thead>
+              <tr><th> </th><th>Μήνας</th><th>Περιγραφή</th><th>Υπόλοιπο</th><th>Κάλυψη</th></tr>
+            </thead>
+            <tbody id="massAllocTbody">
+              <tr><td colspan="5" class="muted">Δεν υπάρχουν ανοιχτές χρεώσεις.</td></tr>
+            </tbody>
+          </table>
+<!-- Template υπο-γραμμής "Έκπτωση" για κάθε χρέωση -->
+<template id="massDiscountRow">
+  <tr class="row-discount">
+    <td></td>
+    <td class="muted">↳ Έκπτωση <span class="disc-note"></span></td>
+    <td></td>
+    <td class="money neg"><span class="disc-amount">-0.00€</span></td>
+    <td></td>
+  </tr>
+</template>
+
+        </div>
+        <div class="alloc-footer">
+          <div>Σύνολο χρέωσης: <b id="massAllocSum">0.00€</b></div>
+          <div>Έκπτωση: <b id="massAllocRest">0.00€</b></div>
+          <div>Ποσό πληρωμής: <b id="massAllocPayAmount">0.00€</b></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" type="submit" id="massPaySaveBtn" disabled>Καταχώρηση Μαζικής Πληρωμής</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Plan Modal -->
+<div id="planModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Πλάνο Διδάκτρων</h3>
+      <button class="modal-close" id="planClose">✕</button>
+    </div>
+    <form id="planForm" autocomplete="off">
+      <input type="hidden" id="planId" />
+      <div class="grid-3">
+        <div><label>Μηνιαίο Ποσό (€)</label><input id="planMonthly" type="number" step="0.01" min="0" required></div>
+        <div><label>Έναρξη</label><input id="planStartYm" type="month" required></div>
+        <div><label>Διάρκεια (μήνες)</label><input id="planMonths" type="number" min="1" max="24" required></div>
+      </div>
+      <div class="grid-3">
+        <div><label>Τέλος Εγγραφής (€)</label><input id="planRegFee" type="number" step="0.01" min="0"></div>
+        <div><label>Μόνο μελλοντικά</label><input id="planFutureOnly" type="checkbox" checked></div>
+        <div><label>Ημέρα λήξης (due)</label><input id="planDueDay" type="number" min="1" max="28" value="10"></div>
+      </div>
+      <div><label>Σημειώσεις</label><textarea id="planNotes" placeholder="π.χ. Υποτροφία 10%"></textarea></div>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="planSaveBtn">Αποθήκευση & Δημιουργία</button>
+      </div>
+<!-- === Προεπισκόπηση Πλάνου (μέσα στο ίδιο modal) === -->
+<div id="planPreviewWrap" class="section" style="margin-top:14px;">
+  <div class="section-header">
+    <h3 class="section-title">Προεπισκόπηση Πλάνου</h3>
+    <div class="section-meta">Μήνες: <span id="planPrevCount">0</span> • Σύνολο: <span id="planPrevSum">0.00€</span></div>
+  </div>
+  <div class="section-body">
+    <div class="scroll-area">
+      <table class="alloc-table" style="margin:0;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Μήνας</th>
+            <th>Λήξη</th>
+            <th>Περιγραφή</th>
+            <th>Ποσό</th>
+            <th>Τύπος</th>
+          </tr>
+        </thead>
+        <tbody id="planPreviewTbody">
+          <tr><td colspan="6" class="muted">Συμπλήρωσε στοιχεία επάνω για να εμφανιστεί η προεπισκόπηση.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- === Πραγματικές χρεώσεις για την τρέχουσα εγγραφή/έτος === -->
+<div id="planRealWrap" class="section" style="margin-top:14px;">
+  <div class="section-header">
+    <h3 class="section-title">Χρεώσεις Πλάνου (πραγματικές)</h3>
+    <div class="section-meta">
+      Πλήθος: <span id="planRealCount">0</span> • Υπόλοιπο: <span id="planRealDue">0.00€</span>
+    </div>
+  </div>
+  <div class="section-body">
+    <div class="scroll-area">
+      <table class="alloc-table" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Μήνας</th>
+            <th>Περιγραφή</th>
+            <th>Λήξη</th>
+            <th>Ποσό</th>
+            <th>Κατάσταση</th>
+            <th></th> <!-- κουβαδάκι -->
+          </tr>
+        </thead>
+        <tbody id="planRealTbody">
+          <tr><td colspan="6" class="muted">Δεν υπάρχουν χρεώσεις για την επιλεγμένη εγγραφή.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Exam Modal -->
+<div id="examModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Εξέταση</h3>
+      <button class="modal-close" id="examClose">✕</button>
+    </div>
+    <form id="examForm" autocomplete="off">
+      <input type="hidden" id="examId" />
+      <div class="grid-3">
+        <div>
+          <label>Ημερομηνία</label>
+          <input id="examDate" type="date" />
+        </div>
+        <div>
+          <label>Μάθημα/Ενότητα</label>
+          <input id="examSubject" placeholder="π.χ. Τελική εξέταση Β΄" />
+        </div>
+        <div>
+          <label>Τύπος</label>
+          <select id="examType">
+            <option value="final">Τελική</option>
+            <option value="resit">Επανεξέταση</option>
+            <option value="cert">Πιστοποίηση</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <label>Τέλος εξέτασης (€)</label>
+          <input id="examFee" type="number" step="0.01" min="0" />
+        </div>
+        <div>
+          <label>Αποτέλεσμα</label>
+          <select id="examResult">
+            <option value="">—</option>
+            <option value="pass">Επιτυχία</option>
+            <option value="fail">Αποτυχία</option>
+            <option value="grade">Βαθμός</option>
+          </select>
+        </div>
+        <div>
+          <label>Βαθμός</label>
+          <input id="examGrade" type="text" placeholder="π.χ. 85/100 ή 18/20" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label>Πιστοποιητικό #</label>
+          <input id="examCert" placeholder="π.χ. CERT-2026-00012" />
+        </div>
+<div class="inline-check">
+  <input id="examCreateCharge" type="checkbox" checked />
+  <label for="examCreateCharge">Δημιουργία χρέωσης εξέτασης</label>
+</div>
+
+      </div>
+
+      <div>
+        <label>Σχόλια</label>
+        <textarea id="examNotes" placeholder="Παρατηρήσεις…"></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" type="submit" id="examSaveBtn">Αποθήκευση</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Adjustment Modal -->
+<div id="adjModal" class="modal" aria-hidden="true">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Adjustment (Μηνιαία πίστωση/χρέωση)</h3>
+      <button class="modal-close" id="adjClose">✕</button>
+    </div>
+    <form id="adjForm" autocomplete="off">
+      <div class="grid-3">
+        <div>
+          <label>Είδος</label>
+          <select id="adjKind">
+            <option value="credit">Πίστωση (-)</option>
+            <option value="debit">Χρέωση (+)</option>
+          </select>
+        </div>
+        <div>
+          <label>Ποσό</label>
+          <input id="adjAmount" type="number" step="0.01" min="0" required>
+        </div>
+        <div>
+          <label>Μήνας</label>
+          <input id="adjYm" type="month" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <label>Λήξη</label>
+          <input id="adjDue" type="date">
+        </div>
+        <div>
+          <label>Περιγραφή</label>
+          <input id="adjDesc" placeholder="Υποτροφία, διόρθωση, κ.λπ.">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="submit">Προσθήκη Adjustment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="reportArea" style="display:none"></div>
+<style>
+@media print {
+  body { background:#fff }
+  #reportArea { display:block; }
+  .no-print, header, .wrap { display:none !important; }
+  .report { font: 12pt/1.35 system-ui; color:#111; margin:0; }
+  .report h1 { font-size:18pt; margin:0 0 8pt }
+  .report h2 { font-size:13pt; margin:12pt 0 6pt; color:#0c5757 }
+  .report table { width:100%; border-collapse:collapse; margin:6pt 0 }
+  .report th, .report td { border-bottom:1px solid #eee; padding:6pt 4pt; font-size:10pt; text-align:left }
+  .report .muted { color:#666 }
+  .report .grid { display:grid; grid-template-columns:1fr 1fr; gap:8pt }
+  .report .meta { font-size:9pt; color:#666; margin-top:6pt }
+    .modal,
+  .modal-backdrop,
+  .overlay { display:none !important; }
+
+  .report table { page-break-inside:auto }
+  .report tr    { page-break-inside:avoid; page-break-after:auto }
+  .report h2    { page-break-after:avoid }
+}
+</style>
+
+
+<script>
+/* ======= Keys ======= */
+const KEY_STUDENTS='apollon_students';
+const KEY_ENROLLS='apollon_enrollments';
+const KEY_PAYMENTS='apollon_payments';
+
+/* ======= Helpers ======= */
+const el=s=>document.querySelector(s);
+const fmtDate = d => {
+  if (!d) return '';
+  const dt = new Date(d);
+  const dd = String(dt.getDate()).padStart(2,'0');
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const yyyy = dt.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
+const toISO=d=>d?new Date(d).toISOString().slice(0,10):'';
+const uid=()=> 'ID'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+
+/* ======= DB ======= */
+const db={all(){return JSON.parse(localStorage.getItem(KEY_STUDENTS)||'[]')},
+  save(v){localStorage.setItem(KEY_STUDENTS,JSON.stringify(v))},
+  upsert(r){const a=db.all();const i=a.findIndex(x=>x.id===r.id); i>=0?a.splice(i,1,r):a.push(r); db.save(a)},
+  remove(id){db.save(db.all().filter(x=>x.id!==id))}
+};
+const enrDB={all(){return JSON.parse(localStorage.getItem(KEY_ENROLLS)||'[]')},
+  save(v){localStorage.setItem(KEY_ENROLLS,JSON.stringify(v))},
+  upsert(r){const a=enrDB.all();const i=a.findIndex(x=>x.id===r.id); i>=0?a.splice(i,1,r):a.push(r); enrDB.save(a)},
+  remove(id){enrDB.save(enrDB.all().filter(x=>x.id!==id))}
+};
+const payDB={all(){return JSON.parse(localStorage.getItem(KEY_PAYMENTS)||'[]')},
+  save(v){localStorage.setItem(KEY_PAYMENTS,JSON.stringify(v))},
+  upsert(r){const a=payDB.all();const i=a.findIndex(x=>x.id===r.id); i>=0?a.splice(i,1,r):a.push(r); payDB.save(a)},
+  remove(id){payDB.save(payDB.all().filter(x=>x.id!==id))}
+};
+
+/* ======= Tuition Model: Plans / Charges / Allocations / Documents (Phase 1 scaffolding) ======= */
+// Storage keys
+const KEY_PLANS='apollon_plans';
+const KEY_CHARGES='apollon_charges';
+const KEY_ALLOC='apollon_allocations';
+const KEY_DOCS='apollon_documents';
+const KEY_CATALOGS = 'apollon_catalogs';
+
+function catRead(){ try { return JSON.parse(localStorage.getItem(KEY_CATALOGS) || '{}'); } catch { return {}; } }
+function catWrite(v){ localStorage.setItem(KEY_CATALOGS, JSON.stringify(v || {})); }
+
+// Μετατροπή παλιών δεδομένων -> νέο σχήμα
+function migrateCatalogs(){
+  const c = catRead();
+  let changed = false;
+
+  // Φρόντισε να υπάρχει c.schools
+  if (!Array.isArray(c.schools)) { c.schools = []; changed = true; }
+
+  // Ομογενοποίηση schools
+  c.schools = c.schools.map(s => {
+    let name, classes;
+    if (typeof s === 'string') { name = s; classes = []; changed = true; }
+    else { name = s.name; classes = Array.isArray(s.classes) ? s.classes : []; }
+
+    // Ομογενοποίηση classes -> αντικείμενα με years
+    classes = classes.map(cl => {
+      if (typeof cl === 'string') { changed = true; return { name: cl, years: Array.isArray(c.years) ? c.years : [] }; }
+      if (!Array.isArray(cl.years)) { cl.years = Array.isArray(c.years) ? c.years : []; changed = true; }
+      return cl;
+    });
+
+    return { name, classes };
+  });
+
+  // Κατάργηση global years (αν υπήρχαν)
+  if ('years' in c) { delete c.years; changed = true; }
+
+  if (changed) catWrite(c);
+}
+
+function cleanupOrphans(){
+  const enrIds  = new Set(enrDB.all().map(e => e.id));
+  const payIds  = new Set(payDB.all().map(p => p.id));
+
+  // 1) Καθάρισε ορφανά charges (εκτός από όσα είναι γενικά: enrollmentId == null)
+  const charges = chargeDB.all();
+  const goodCharges = charges.filter(c => !c.enrollmentId || enrIds.has(c.enrollmentId));
+  if (goodCharges.length !== charges.length) chargeDB.save(goodCharges);
+
+  const chargeIds = new Set(goodCharges.map(c => c.id));
+
+  // 2) Καθάρισε ορφανά allocations
+  const allocs = allocDB.all();
+  const goodAllocs = allocs.filter(a => payIds.has(a.paymentId) && chargeIds.has(a.chargeId));
+  if (goodAllocs.length !== allocs.length) allocDB.save(goodAllocs);
+}
+
+// DB helpers (ίδιο στυλ με db/enrDB/payDB)
+const planDB={all(){return JSON.parse(localStorage.getItem(KEY_PLANS)||'[]')},
+  save(v){localStorage.setItem(KEY_PLANS,JSON.stringify(v))},
+  upsert(r){const a=planDB.all();const i=a.findIndex(x=>x.id===r.id);i>=0?a.splice(i,1,r):a.push(r);planDB.save(a)},
+  remove(id){planDB.save(planDB.all().filter(x=>x.id!==id))}
+};
+const chargeDB={all(){return JSON.parse(localStorage.getItem(KEY_CHARGES)||'[]')},
+  save(v){localStorage.setItem(KEY_CHARGES,JSON.stringify(v))},
+  upsert(r){const a=chargeDB.all();const i=a.findIndex(x=>x.id===r.id);i>=0?a.splice(i,1,r):a.push(r);chargeDB.save(a)},
+  upsertMany(arr){const all=chargeDB.all();arr.forEach(r=>{const i=all.findIndex(x=>x.id===r.id);i>=0?all.splice(i,1,r):all.push(r)});chargeDB.save(all)},
+  remove(id){chargeDB.save(chargeDB.all().filter(x=>x.id!==id))}
+};
+const allocDB={all(){return JSON.parse(localStorage.getItem(KEY_ALLOC)||'[]')},
+  save(v){localStorage.setItem(KEY_ALLOC,JSON.stringify(v))},
+  upsert(r){const a=allocDB.all();const i=a.findIndex(x=>x.id===r.id);i>=0?a.splice(i,1,r):a.push(r);allocDB.save(a)},
+  remove(id){allocDB.save(allocDB.all().filter(x=>x.id!==id))}
+};
+const docDB={all(){return JSON.parse(localStorage.getItem(KEY_DOCS)||'[]')},
+  save(v){localStorage.setItem(KEY_DOCS,JSON.stringify(v))},
+  upsert(r){const a=docDB.all();const i=a.findIndex(x=>x.id===r.id);i>=0?a.splice(i,1,r):a.push(r);docDB.save(a)},
+  remove(id){docDB.save(docDB.all().filter(x=>x.id!==id))}
+};
+
+const KEY_EXAMS = 'apollon_exams';
+const examDB = {
+  all(){ return JSON.parse(localStorage.getItem(KEY_EXAMS) || '[]'); },
+  save(v){ localStorage.setItem(KEY_EXAMS, JSON.stringify(v)); },
+  upsert(r){
+    const a = examDB.all(); const i = a.findIndex(x => x.id === r.id);
+    i>=0 ? a.splice(i,1,r) : a.push(r);
+    examDB.save(a);
+  },
+  remove(id){ examDB.save(examDB.all().filter(x => x.id !== id)); }
+};
+
+function todayISO() {
+  return new Date().toISOString().slice(0,10);
+}
+
+/* ===== Μαθητολόγιο (Registry) ===== */
+const registryBtn = document.getElementById('registryBtn');
+const registryModal = document.getElementById('registryModal');
+const registryClose = document.getElementById('registryClose');
+const registryForm  = document.getElementById('registryForm');
+const regYearSel    = document.getElementById('regYear');
+const regSemesterSel= document.getElementById('regSemester');
+const regGovSel     = document.getElementById('regGov');
+
+// Γέμισμα έτους (όπως κάνεις και για το yearFilter)
+function fillAcademicYearsForRegistry(){
+  if (!regYearSel) return;
+  regYearSel.innerHTML = academicYears().map(y => `<option>${y}</option>`).join('');
+  // default στο τρέχον
+  regYearSel.value = academicYears()[0];
+}
+
+// Άνοιγμα/κλείσιμο modal
+function openRegistry(){ registryModal.classList.add('open'); registryModal.setAttribute('aria-hidden', 'false'); }
+function closeRegistry(){ registryModal.classList.remove('open'); registryModal.setAttribute('aria-hidden', 'true'); }
+
+if (registryBtn) registryBtn.addEventListener('click', () => { fillAcademicYearsForRegistry(); openRegistry(); });
+if (registryClose) registryClose.addEventListener('click', closeRegistry);
+registryModal?.addEventListener('click', (e)=>{ if(e.target===registryModal) closeRegistry(); });
+
+// Υπολογισμός εξαμήνου από Ημ/νία Εγγραφής
+// Κανόνας: Α' εξάμηνο = Sep–Feb (μήνες 8..11 ή 0..1), Β' εξάμηνο = Mar–Aug (μήνες 2..7)
+function semesterFromDate(dstr){
+  if(!dstr) return null;
+  let dt;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dstr)) {         // 2025-09-04
+    dt = new Date(dstr);
+  } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dstr)) { // 04/09/2025
+    const [dd,mm,yyyy] = dstr.split('/').map(n=>parseInt(n,10));
+    dt = new Date(yyyy, mm-1, dd);
+  } else {
+    dt = new Date(dstr); // fallback
+  }
+  if (isNaN(+dt)) return null;
+  const m = dt.getMonth(); // 0..11
+  return (m>=8 || m<=1) ? 'A' : 'B'; // A: Sep–Feb, B: Mar–Aug
+}
+
+
+// Συγκέντρωση δεδομένων εγγραφών για φίλτρα modal
+function collectRegistryData({year, semester, govFilter}){
+  const students = db.all();
+  const enrolls  = enrDB.all();
+
+  let list = enrolls.filter(e => String(e.year) === String(year));
+
+  // βάση Ημ/νίας Εγγραφής (regDate)
+  list = list.filter(e => semesterFromDate(e.regDate) === semester);
+
+  // Υπουργείο: govReg (boolean)
+  if (govFilter === 'yes') list = list.filter(e => !!e.govReg);
+  else if (govFilter === 'no') list = list.filter(e => !e.govReg);
+
+  const mapStud = new Map(students.map(s => [s.id, s]));
+  const rows = list.map(e => {
+    const s = mapStud.get(e.studentId) || {};
+    return {
+      studentId: e.studentId,
+      surname: s.surname || '',
+      name: s.name || '',
+      school: e.school || '',
+      class: e.class || '',
+      teacher: e.teacher || '',
+      enrDate: e.regDate || '',
+      gov: !!e.govReg
+    };
+  });
+
+  return rows.sort((a,b)=> (a.surname||'').localeCompare(b.surname||'','el') || (a.name||'').localeCompare(b.name||'','el'));
+}
+
+// ===== ΜΑΘΗΤΟΛΟΓΙΟ: HTML Builder + Print =====
+
+// Παίρνω τις ρυθμίσεις επιχείρησης (υπάρχει ήδη η getSettings στο αρχείο)
+function getSettings(){
+  try { return JSON.parse(localStorage.getItem('apollon_settings') || '{}'); }
+  catch { return {}; }
+}
+
+// Ασφαλές print σε νέο καθαρό window (υπάρχει παρόμοιο helper - το κρατάμε εδώ scoped)
+function safePrintHTMLLandscape(html){
+  const w = window.open('', '_blank');
+  if(!w){ alert('Παρακαλώ επιτρέψτε pop-ups για να εξαχθεί το PDF.'); return; }
+  w.document.open();
+  w.document.write(`<!doctype html>
+  <html><head><meta charset="utf-8">
+    <title>Μαθητολόγιο</title>
+    <style>
+      @page { size: A4 landscape; margin: 12mm; }
+      *{box-sizing:border-box}
+      body { margin:0; font: 11pt/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#111; }
+      h1,h2{margin:0}
+      .header { display:flex; align-items:flex-start; gap:10px; }
+      .school-block { page-break-inside: avoid; margin-top: 12pt; }
+      .title { text-align:center; margin: 10pt 0 14pt; }
+      .muted { color:#666; }
+      table { width:100%; border-collapse:collapse; }
+      th, td { border-bottom:1px solid #eee; padding:6pt 4pt; font-size:10pt; text-align:left; vertical-align:top; }
+      thead th { white-space:nowrap; font-size:10pt; }
+      .nr { text-align:right; }
+      .footer-date { position:fixed; right:12mm; bottom:8mm; font-size:9pt; color:#666; }
+      .pagebreak { page-break-before: always; }
+      .school-title { font-size:13pt; color:#0c5757; margin: 8pt 0 6pt; }
+      /* Ελαφρύς περιορισμός πλάτους στις μεγάλες στήλες */
+      .col-addr { max-width: 280px; }
+      .col-remarks { max-width: 240px; }
+      .col-class { white-space:nowrap; }
+    </style>
+  </head>
+  <body>${html}<div class="footer-date">Ημ/νία παραγωγής: ${new Date().toISOString().slice(0,10)}</div></body></html>`);
+  w.document.close(); w.focus();
+  w.onload = () => { try { w.print(); } finally { w.close(); } };
+}
+
+// Μορφοποίηση ημ/νίας σε dd/mm/yyyy, δέχεται και ISO ή ήδη dd/mm/yyyy
+function toDDMMYYYY(dstr){
+  if(!dstr) return '';
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dstr)) return dstr;
+  const dt = new Date(dstr);
+  if (isNaN(+dt)) return String(dstr);
+  const dd = String(dt.getDate()).padStart(2,'0');
+  const mm = String(dt.getMonth()+1).padStart(2,'0');
+  const yyyy = dt.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+// Από το string dob (yyyy-mm-dd ή dd/mm/yyyy) επιστρέφω έτος γέννησης
+function birthYearFrom(dob){
+  if(!dob) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(dob)) return dob.slice(0,4);
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(dob)) return dob.slice(-4);
+  const dt = new Date(dob);
+  return isNaN(+dt) ? '' : String(dt.getFullYear());
+}
+
+// Κεφαλίδα πρώτης σελίδας: στοιχεία Εκπαιδευτηρίου από settings + κεντρικός τίτλος
+function registryCoverHeader(params){
+  const S = getSettings(); // companyName, afm, doy, address, city, phone, email
+  const semLabel = (params.semester === 'A' ? 'Α' : 'Β');
+  return `
+    <div class="header">
+      <div>
+        <div><b>${S.companyName||''}</b></div>
+        <div class="muted">ΑΦΜ: ${S.afm||'—'}, ΔΟΥ: ${S.doy||'—'}</div>
+        <div class="muted">${S.address||''} ${S.city||''}</div>
+        <div class="muted">Τ: ${S.phone||''} • E: ${S.email||''}</div>
+      </div>
+      <div class="title" style="flex:1">
+        <h1>ΜΑΘΗΤΟΛΟΓΙΟ ${semLabel} ΕΞΑΜΗΝΟΥ - ΔΙΔΑΚΤΙΚΟΥ ΕΤΟΥΣ ${params.year}</h1>
+      </div>
+    </div>
+  `;
+}
+
+// Ομαδοποίηση ανά Σχολή και rendering πίνακα με 10 στήλες
+function buildRegistryHTML(data, params){
+  // data: από collectRegistryData(params) — ήδη φιλτραρισμένα
+  // enrichment από students για πατρώνυμο, ΑΜΚΑ, διεύθυνση, πόλη, dob κ.λπ.
+  const students = db.all();
+  const stMap = new Map(students.map(s => [s.id, s]));
+
+  // enhance + sort ανά σχολή -> (επώνυμο, όνομα)
+  const rows = data.map(r => {
+    const s = stMap.get(r.studentId) || {};
+    return {
+      school: r.school || '—',
+      surname: r.surname || s.surname || '',
+      name: r.name || s.name || '',
+      fatherName: s.fatherName || '',
+      birthYear: birthYearFrom(s.dob || ''),
+      amka: s.amka || '',
+      address: [s.address, s.city].filter(Boolean).join(', '),
+      regDate: toDDMMYYYY(r.enrDate || r.regDate || ''),
+      classYear: [r.class || '', (r.yearOfStudy || r.studyYear || r.semester || '')].filter(Boolean).join(' '),
+      teacher: r.teacher || '',
+      remarks: r.notes || '' // από modal εγγραφών
+    };
+  });
+
+  // group by school
+  const groups = new Map();
+  for (const row of rows) {
+    if (!groups.has(row.school)) groups.set(row.school, []);
+    groups.get(row.school).push(row);
+  }
+
+  // sort each group by surname, name
+  for (const [k, arr] of groups) {
+    arr.sort((a,b)=> (a.surname||'').localeCompare(b.surname||'','el') || (a.name||'').localeCompare(b.name||'','el'));
+  }
+
+  // render
+  let html = registryCoverHeader(params);
+
+  for (const [school, arr] of groups) {
+    html += `
+    <div class="school-block">
+      <h2 class="school-title">${school}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Επώνυμο & Όνομα</th>
+            <th>Όνομα Πατρός</th>
+            <th>Έτος Γέννησης</th>
+            <th>ΑΜΚΑ</th>
+            <th class="col-addr">Διεύθυνση & Περιοχή</th>
+            <th>Ημ/νία Εγγραφής</th>
+            <th class="col-class">Τάξη & Έτος Φοίτησης</th>
+            <th>Καθηγητής</th>
+            <th class="col-remarks">Παρατηρήσεις</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${arr.map((r, i)=>`
+            <tr>
+              <td class="nr">${i+1}</td>
+              <td>${[r.surname, r.name].filter(Boolean).join(' ')}</td>
+              <td>${r.fatherName||''}</td>
+              <td>${r.birthYear||''}</td>
+              <td>${r.amka||''}</td>
+              <td class="col-addr">${r.address||''}</td>
+              <td>${r.regDate||''}</td>
+              <td class="col-class">${r.classYear||''}</td>
+              <td>${r.teacher||''}</td>
+              <td class="col-remarks">${r.remarks||''}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  return html;
+}
+
+// Κύρια ρουτίνα για Submit: φτιάχνει HTML και στέλνει σε print (landscape)
+function buildRegistryReport(data, params){
+  const html = buildRegistryHTML(data, params);
+  safePrintHTMLLandscape(html);
+}
+
+
+registryForm?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const params = {
+    year: regYearSel.value,
+    semester: regSemesterSel.value,
+    govFilter: regGovSel.value
+  };
+  const data = collectRegistryData(params);
+  // === ΝΕΟ: παραγωγή PDF
+  buildRegistryReport(data, params);
+  closeRegistry();
+});
+
+// Προεπισκόπηση (χωρίς κλείσιμο modal)
+document.getElementById('registryPreviewBtn')?.addEventListener('click', () => {
+  const params = {
+    year: regYearSel.value,
+    semester: regSemesterSel.value,
+    govFilter: regGovSel.value
+  };
+  const data = collectRegistryData(params);
+  alert(`Βρέθηκαν ${data.length} εγγραφές για ${params.year}, εξάμηνο ${params.semester}, υπουργείο: ${params.govFilter}.`);
+});
+
+// --- Εξαγωγή σε Word (.doc — HTML που ανοίγει σε Word) ---
+function wordWrapHTML(innerHTML){
+  // Landscape για Word: Section1 CSS με mso- ιδιότητες
+  return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>Μαθητολόγιο</title>
+  <!-- Ελάχιστα Word-specific styles -->
+  <style>
+    @page Section1 { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 12mm; }
+    div.Section1 { page: Section1; }
+    body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color:#111; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border:1px solid #ddd; padding:6pt 4pt; vertical-align:top; }
+    thead th { background:#f6f6f6; }
+    .nr { text-align:right; }
+    .school-title { font-size:13pt; color:#0c5757; margin: 8pt 0 6pt; }
+    .muted { color:#666; }
+    .footer-date { position:fixed; right:12mm; bottom:8mm; font-size:9pt; color:#666; }
+  </style>
+</head>
+<body><div class="Section1">
+  ${innerHTML}
+  <div class="footer-date">Ημ/νία παραγωγής: ${new Date().toISOString().slice(0,10)}</div>
+</div></body></html>`;
+}
+
+function downloadWordFromHTML(fullHTML, filename='mathitologio.doc'){
+  const blob = new Blob(['\ufeff', fullHTML], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+}
+
+// Κουμπί: Εξαγωγή σε Word
+document.getElementById('registryWordBtn')?.addEventListener('click', () => {
+  const params = {
+    year: regYearSel.value,
+    semester: regSemesterSel.value,
+    govFilter: regGovSel.value
+  };
+  const data = collectRegistryData(params);
+  const inner = buildRegistryHTML(data, params);     // Ίδιο HTML με το PDF
+  const full  = wordWrapHTML(inner);
+  const semLabel = (params.semester === 'A' ? 'A' : 'B');
+  const fname = `Μαθητολόγιο_${params.year}_${semLabel}.doc`;
+  downloadWordFromHTML(full, fname);
+});
+
+
+function renderPlanRealChargesInModal() {
+  const tbody = document.getElementById('planRealTbody');
+  const cSpan = document.getElementById('planRealCount');
+  const dueSpan = document.getElementById('planRealDue');
+  if (!tbody || !cSpan || !dueSpan) return;
+
+  if (!selectedEnrollmentId) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">Επίλεξε εγγραφή.</td></tr>`;
+    cSpan.textContent = '0';
+    dueSpan.textContent = '0.00€';
+    return;
+  }
+
+  let list = chargeDB.all().filter(c => c.enrollmentId === selectedEnrollmentId);
+  if (yearFilter.value) list = list.filter(c => c.year === yearFilter.value);
+
+  list.sort((a,b) => (a.ym||'').localeCompare(b.ym||'') || (a.type||'').localeCompare(b.type||''));
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">Δεν υπάρχουν χρεώσεις για την επιλεγμένη εγγραφή.</td></tr>`;
+    cSpan.textContent = '0';
+    dueSpan.textContent = '0.00€';
+    return;
+  }
+
+  // Υπολογισμός υπολοίπου (θετικό=οφειλή, αρνητικό=πίστωση)
+  let totalRemain = 0;
+
+  tbody.innerHTML = list.map(c => {
+    const paid = allocationSumForCharge(c.id);
+    const remain = ((+c.amount)||0) - ((+paid)||0);
+    totalRemain += remain;
+
+    const st = chargeStatusById(c.id); // 'open'|'partial'|'paid'
+    const stLabel = st==='paid' ? 'Εξοφλημένο' : (st==='partial' ? 'Μερικώς' : 'Ανοιχτό');
+    const badge = `<span class="badge ${st}${c.locked?' locked':''}">${c.locked?'🔒 ':''}${stLabel}</span>`;
+
+    // Κουμπί διαγραφής (κουβαδάκι). Disabled αν locked ή αν έχει allocations
+    const hasAllocs = (paid > 0.0001);
+    const canDelete = !c.locked && !hasAllocs;
+    const delBtn = `<button class="btn warn plan-charge-del" data-id="${c.id}" ${canDelete?'':'disabled'} title="${canDelete?'Διαγραφή χρέωσης':'Δεν γίνεται διαγραφή (έχει πληρωμές ή είναι κλειδωμένη)'}">🗑️</button>`;
+
+    const monthTxt = `${c.monthLabel||''} ${(c.ym||'').slice(0,4)}`;
+
+    return `<tr data-id="${c.id}">
+      <td>${monthTxt}</td>
+      <td>${c.description||''}</td>
+      <td>${fmtDate(c.dateDue)}</td>
+      <td>${(+c.amount||0).toFixed(2)}€</td>
+      <td>${badge}</td>
+      <td style="text-align:right;">${delBtn}</td>
+    </tr>`;
+  }).join('');
+
+  cSpan.textContent = String(list.length);
+  dueSpan.textContent = totalRemain.toFixed(2) + '€';
+}
+
+/* ======= Tuition helpers (dates, months, status) ======= */
+function greekMonthName(m){return ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'][m]}
+function ymString(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
+function academicYearFromDate(d){const y=d.getMonth()>=8?d.getFullYear():d.getFullYear()-1;return `${y}-${String(y+1).slice(-2)}`}
+function allocationSumForCharge(chargeId){return allocDB.all().filter(a=>a.chargeId===chargeId).reduce((s,a)=>s+(+a.amount||0),0)}
+function chargeStatusById(id){const c=chargeDB.all().find(x=>x.id===id);if(!c) return 'unknown';const paid=allocationSumForCharge(id);const due=(+c.amount)||0;return paid<=0?'open':(paid<due?'partial':'paid')}
+
+/* ======= Plan + Charge generation (no UI yet) ======= */
+// Προτεινόμενα πεδία Plan: { id, studentId, enrollmentId, monthlyAmount, monthsActive, startYm: 'YYYY-MM', registrationFee, discountType, discountValue, notes }
+function generateChargesForPlan(plan,{recreateFutureOnly=true,defaultDueDay=10}={}){
+  if(!plan||!plan.enrollmentId) return [];
+  const created=[];
+  const parts=(plan.startYm||'').split('-'); let y=+parts[0], m=(+parts[1]||1)-1; if(!y||m<0) {const now=new Date(); y=now.getFullYear(); m=now.getMonth();}
+  const count=+plan.monthsActive||0;
+  const now=new Date(); const currentMonthStart=new Date(now.getFullYear(),now.getMonth(),1);
+  for(let i=0;i<count;i++){
+    const dt=new Date(y,m+i,1);
+    if(recreateFutureOnly){const monthEnd=new Date(dt.getFullYear(),dt.getMonth()+1,0); if(monthEnd<currentMonthStart) continue;}
+    const ym=ymString(dt); const year=academicYearFromDate(dt);
+    const exists=chargeDB.all().find(c=>c.enrollmentId===plan.enrollmentId && c.type==='tuition' && c.ym===ym);
+    if(exists && exists.locked) continue;
+    const charge={
+      id: exists?exists.id:uid(),
+      studentId: plan.studentId,
+      enrollmentId: plan.enrollmentId,
+      type:'tuition',
+      description:`Δίδακτρα ${greekMonthName(dt.getMonth())} ${dt.getFullYear()}`,
+      dateDue:new Date(dt.getFullYear(),dt.getMonth(),defaultDueDay).toISOString().slice(0,10),
+      amount:Number(plan.monthlyAmount||0),
+      vatRate:0,
+      exemptionReason:'VAT-exempt education',
+      e3Code:null,
+      year, ym, monthLabel: greekMonthName(dt.getMonth()),
+      locked:false,
+      updated_at:new Date().toISOString()
+    };
+    chargeDB.upsert(charge); created.push(charge.id);
+  }
+  if(+plan.registrationFee>0){
+    const dt=new Date(y,m,1); const year=academicYearFromDate(dt); const ym=ymString(dt);
+    const reg={
+      id: uid(), studentId: plan.studentId, enrollmentId: plan.enrollmentId,
+      type:'registration', description:'Τέλος εγγραφής',
+      dateDue:new Date(dt.getFullYear(),dt.getMonth(),1).toISOString().slice(0,10),
+      amount:Number(plan.registrationFee||0), vatRate:0, exemptionReason:'VAT-exempt education', e3Code:null,
+      year, ym, monthLabel: greekMonthName(dt.getMonth()), locked:false, updated_at:new Date().toISOString()
+    };
+    chargeDB.upsert(reg); created.push(reg.id);
+  }
+  return created;
+}
+
+// Ad-hoc service charge (χωρίς enrollment)
+function createServiceCharge({studentId,enrollmentId=null,description,amount,dateDue}){
+  const d=dateDue?new Date(dateDue):new Date();
+  const year=academicYearFromDate(d); const ym=ymString(d);
+  const rec={id:uid(), studentId, enrollmentId, type:'service', description:description||'Υπηρεσία',
+    dateDue:d.toISOString().slice(0,10), amount:Number(amount||0), vatRate:0, exemptionReason:'VAT-exempt education', e3Code:null,
+    year, ym, monthLabel:greekMonthName(d.getMonth()), locked:false, updated_at:new Date().toISOString()};
+  chargeDB.upsert(rec); return rec.id;
+}
+
+function buildPlanPreview() {
+  const tbody = document.getElementById('planPreviewTbody');
+  const cSpan = document.getElementById('planPrevCount');
+  const sSpan = document.getElementById('planPrevSum');
+  if (!tbody || !cSpan || !sSpan) return;
+
+  const monthly = parseFloat(p.monthly.value || '0') || 0;
+  const months  = parseInt(p.months.value || '0', 10) || 0;
+  const startYm = (p.startYm.value || '').trim();
+  const regFee  = parseFloat(p.regFee.value || '0') || 0;
+  const dueDay  = Math.max(1, Math.min(28, parseInt(p.dueDay.value || '10', 10)));
+  const futureOnly = !!p.futureOnly.checked;
+
+  // Αν λείπουν βασικά, βάλε μήνυμα
+  if (!months || !startYm || monthly < 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">Συμπλήρωσε Μηνιαίο Ποσό, Έναρξη και Διάρκεια.</td></tr>`;
+    cSpan.textContent = '0';
+    sSpan.textContent = '0.00€';
+    return;
+  }
+
+  // Parse start
+  const [sy, sm] = startYm.split('-').map(n => parseInt(n, 10));
+  let start = new Date(sy || new Date().getFullYear(), (sm ? sm-1 : 0), 1);
+
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const rows = [];
+  let total = 0;
+  let seq = 0;
+
+  // Γενιά μηνιαίων διδάκτρων (όπως στο generateChargesForPlan)
+  for (let i = 0; i < months; i++) {
+    const dt = new Date(start.getFullYear(), start.getMonth() + i, 1);
+
+    if (futureOnly) {
+      const monthEnd = new Date(dt.getFullYear(), dt.getMonth()+1, 0);
+      if (monthEnd < currentMonthStart) continue;
+    }
+
+    const ym = ymString(dt);
+    const year = academicYearFromDate(dt);
+    const desc = `Δίδακτρα ${greekMonthName(dt.getMonth())} ${dt.getFullYear()}`;
+    const due = new Date(dt.getFullYear(), dt.getMonth(), dueDay);
+
+    rows.push({
+      idx: ++seq,
+      monthLabel: `${greekMonthName(dt.getMonth())} ${(ym||'').slice(0,4)}`,
+      dateDue: due.toISOString().slice(0,10),
+      desc,
+      amount: monthly,
+      type: 'tuition',
+      year
+    });
+
+    total += monthly;
+  }
+
+  // Τέλος εγγραφής (αν υπάρχει)
+  if (regFee > 0) {
+    const dt0 = new Date(start.getFullYear(), start.getMonth(), 1);
+    rows.unshift({
+      idx: 0,
+      monthLabel: `${greekMonthName(dt0.getMonth())} ${dt0.getFullYear()}`,
+      dateDue: new Date(dt0.getFullYear(), dt0.getMonth(), 1).toISOString().slice(0,10),
+      desc: 'Τέλος εγγραφής',
+      amount: regFee,
+      type: 'registration',
+      year: academicYearFromDate(dt0)
+    });
+    total += regFee;
+    // Επαναρίθμηση
+    rows.forEach((r, i) => r.idx = i+1);
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">Δεν θα δημιουργηθούν νέες χρεώσεις με τα τωρινά κριτήρια.</td></tr>`;
+    cSpan.textContent = '0';
+    sSpan.textContent = '0.00€';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.idx}</td>
+      <td>${r.monthLabel}</td>
+      <td>${fmtDate(r.dateDue)}</td>
+      <td>${r.desc}</td>
+      <td>${(+r.amount||0).toFixed(2)}€</td>
+      <td><span class="badge ${r.type==='registration'?'adjust':'open'}">${r.type==='registration'?'Εγγραφή':'Δίδακτρα'}</span></td>
+    </tr>
+  `).join('');
+
+  cSpan.textContent = String(rows.length);
+  sSpan.textContent = total.toFixed(2) + '€';
+}
+
+function fillSchoolSelect(sel){
+  const c = catRead();
+  sel.innerHTML = `<option value="">—</option>` + (c.schools||[])
+    .map(s => `<option>${s.name}</option>`).join('');
+}
+
+function fillClassSelect(sel, schoolName){
+  const c = catRead();
+  const school = (c.schools||[]).find(s => s.name === schoolName);
+  const classes = school ? school.classes.map(cl => (typeof cl==='string'? cl : cl.name)) : [];
+  sel.innerHTML = `<option value="">—</option>` + classes.map(n => `<option>${n}</option>`).join('');
+}
+
+function fillYearOfStudySelect(sel, schoolName, className){
+  const c = catRead();
+  const school = (c.schools||[]).find(s => s.name === schoolName);
+  const cl = school?.classes.find(x => (typeof x==='string' ? x===className : x.name===className));
+  const years = !cl ? [] : (typeof cl==='string' ? [] : (cl.years || []));
+  sel.innerHTML = `<option value="">—</option>` + years.map(y => `<option>${y}</option>`).join('');
+}
+
+
+
+/* ======= Academic years ======= */
+function academicYears(n=7){
+  const arr=[]; const now=new Date(); let y=now.getMonth()>=8?now.getFullYear():now.getFullYear()-1;
+  for(let i=0;i<n;i++) arr.push(`${y-i}-${(y-i+1).toString().slice(-2)}`);
+  return arr;
+}
+function fillYearSelect(sel){ sel.innerHTML=academicYears().map(y=>`<option>${y}</option>`).join(''); }
+
+/* ======= Tabs behavior ======= */
+const paymentsTabBtn = el('#paymentsTabBtn');
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ======= Students UI ======= */
+const tbody=el('#tbl tbody'), q=el('#q'), count=el('#count');
+const delBtn=el('#delBtn'), newBtn=el('#newBtn'), exportBtn=el('#exportBtn'), importInp=el('#importInp');
+const studentHeading=el('#studentHeading');
+const yearFilter=el('#yearFilter'); fillYearSelect(yearFilter);
+
+let selectedStudentId=null;
+let selectedEnrollmentId=null;
+let selectedPaymentId = null;
+
+function renderStudents(filter=''){
+  const data=db.all().sort((a,b)=>(a.surname||'').localeCompare(b.surname||'','el'));
+  const term=filter.trim().toLowerCase();
+  const rows=term?data.filter(s=>[s.surname,s.name,s.phone,s.email].some(v=>(v||'').toLowerCase().includes(term))):data;
+  tbody.innerHTML=rows.map(s=>`
+    <tr data-id="${s.id}" class="${s.id===selectedStudentId?'active':''}">
+      <td>${s.surname||''}</td><td>${s.name||''}</td><td>${fmtDate(s.dob)}</td><td>${s.phone||''}</td><td>${s.email||''}</td>
+    </tr>`).join('');
+  count.textContent=rows.length;
+  delBtn.disabled=!selectedStudentId;
+}
+renderStudents();
+
+// === Exam UI refs ===
+const enrExamBtn = document.getElementById('enrExamBtn');
+enrExamBtn.disabled = true;
+
+const examModal = document.getElementById('examModal');
+const examClose = document.getElementById('examClose');
+const examForm  = document.getElementById('examForm');
+const ex = {
+  id:    document.getElementById('examId'),
+  date:  document.getElementById('examDate'),
+  subj:  document.getElementById('examSubject'),
+  type:  document.getElementById('examType'),
+  fee:   document.getElementById('examFee'),
+  res:   document.getElementById('examResult'),
+  grade: document.getElementById('examGrade'),
+  cert:  document.getElementById('examCert'),
+  notes: document.getElementById('examNotes'),
+  makeCharge: document.getElementById('examCreateCharge')
+};
+
+/* ======= Student Form ======= */
+const form=el('#form'), formTitle=el('#formTitle');
+const f={id:el('#id'),surname:el('#surname'),name:el('#name'),fatherName: el('#fatherName'),amka: el('#amka'),birthPlace: el('#birthPlace'),dob:el('#dob'),phone:el('#phone'),email:el('#email'),city:el('#city'),address:el('#address'),notes:el('#notes')};
+
+function clearStudentForm(){
+  form.reset(); f.id.value=''; selectedStudentId=null; formTitle.textContent='Καταχώρηση Σπουδαστή';
+  studentHeading.textContent='Κανένας σπουδαστής επιλεγμένος';
+  [...tbody.children].forEach(r=>r.classList.remove('active'));
+  delBtn.disabled=true;
+  
+  // Κλείδωμα tabs εγγραφών/πληρωμών
+  document.getElementById('enrollmentsTabBtn').disabled = true;
+  document.getElementById('paymentsTabBtn').disabled = true;
+
+  // reset enrollments & payments state
+  selectedEnrollmentId=null;
+  disableEnrollmentForm(true);
+  disablePaymentForm(true);
+  renderEnrollments(); 
+  renderPayments();
+}
+el('#resetBtn').addEventListener('click',clearStudentForm);
+newBtn.addEventListener('click',clearStudentForm);
+
+
+  // Μεταφορά στη σελίδα ρυθμίσεων όταν κάνεις κλικ στο username
+  document.addEventListener('DOMContentLoaded', () => {
+    const u = document.getElementById('userName');
+    if (u) {
+      u.style.cursor = 'pointer';
+      u.title = 'Ρυθμίσεις επιχείρησης';
+      u.addEventListener('click', () => {
+        window.location.href = 'settings.html';
+      });
+    }
+  });
+
+function loadStudent(rec){
+  formTitle.textContent='Επεξεργασία Σπουδαστή';
+  Object.keys(f).forEach(k=>f[k].value=rec[k]??'');
+  f.dob.value=toISO(rec.dob);
+  f.fatherName.value = rec.fatherName ?? '';
+  f.amka.value       = rec.amka ?? '';
+  f.birthPlace.value = rec.birthPlace ?? '';
+  studentHeading.textContent=`${rec.surname||''} ${rec.name||''}`.trim() || 'Στοιχεία Σπουδαστή';
+}
+
+form.addEventListener('submit',e=>{
+  e.preventDefault();
+  const rec={
+    id:f.id.value||uid(),
+    surname:f.surname.value.trim(),
+    name:f.name.value.trim(),
+    dob:f.dob.value||null,
+    phone:f.phone.value.trim(),
+    email:f.email.value.trim(),
+    city:f.city.value.trim(),
+    address:f.address.value.trim(),
+    notes:f.notes.value.trim(),
+    fatherName: f.fatherName.value.trim(),
+    amka: f.amka.value.trim(),
+    birthPlace: f.birthPlace.value.trim(),
+    updated_at:new Date().toISOString()
+  };
+  if(!rec.surname||!rec.name){alert('Συμπλήρωσε Όνομα και Επώνυμο.');return;}
+  db.upsert(rec);
+  f.id.value=rec.id; selectedStudentId=rec.id;
+  renderStudents(q.value);
+  formTitle.textContent='Επεξεργασία Σπουδαστή';
+  // enable enrollments tab for this student
+  disableEnrollmentForm(false);
+  renderEnrollments(); renderPayments();
+});
+
+tbody.addEventListener('click', e => {
+  const tr = e.target.closest('tr'); if (!tr) return;
+  selectedStudentId = tr.dataset.id;
+  const rec = db.all().find(x => x.id === selectedStudentId);
+  loadStudent(rec);
+
+   // Enable enrollments & payments tab
+document.getElementById('enrollmentsTabBtn').disabled = false;
+document.getElementById('paymentsTabBtn').disabled = false;
+
+  // UI
+  [...tbody.children].forEach(r => r.classList.remove('active'));
+  tr.classList.add('active');
+  delBtn.disabled = false;
+  if (massPayBtn) massPayBtn.disabled = false;
+
+  // Reset/lock related forms
+  selectedEnrollmentId = null;
+  clearEnrForm();
+  //disablePaymentForm(true);
+  clearPayForm();
+  enrPlanBtn.disabled = true; // άλλαξε μαθητής → καμία εγγραφή επιλεγμένη
+  enrExamBtn.disabled = true;
+
+  // optional: always jump to "Στοιχεία"
+  document.querySelector('[data-tab="tab-student"]').click();
+
+  // refresh
+  renderEnrollments();
+  renderPayments();
+  renderCharges(); // ΝΕΟ
+});
+
+q.addEventListener('input',e=>renderStudents(e.target.value));
+
+/* ======= Backup / Restore ======= */
+exportBtn.addEventListener('click',()=>{
+  const payload = {
+    version: 'apollon-1',
+    exported_at: new Date().toISOString(),
+    students: db.all(),
+    enrollments: enrDB.all(),
+    payments: payDB.all(),
+    plans: planDB.all(),
+    charges: chargeDB.all(),
+    allocations: allocDB.all(),
+    documents: docDB.all()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `apollon_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+importInp.addEventListener('change', async e => {
+  const file = e.target.files?.[0]; if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    // Backward-compat: παλιά backups ήταν σκέτο array μαθητών
+    if (Array.isArray(data)) {
+      localStorage.setItem(KEY_STUDENTS, JSON.stringify(data));
+    } else if (data && typeof data === 'object') {
+      if ('students'     in data) localStorage.setItem(KEY_STUDENTS, JSON.stringify(data.students     || []));
+      if ('enrollments'  in data) localStorage.setItem(KEY_ENROLLS,  JSON.stringify(data.enrollments  || []));
+      if ('payments'     in data) localStorage.setItem(KEY_PAYMENTS, JSON.stringify(data.payments     || []));
+      if ('plans'        in data) localStorage.setItem(KEY_PLANS,    JSON.stringify(data.plans        || []));
+      if ('charges'      in data) localStorage.setItem(KEY_CHARGES,  JSON.stringify(data.charges      || []));
+      if ('allocations'  in data) localStorage.setItem(KEY_ALLOC,    JSON.stringify(data.allocations  || []));
+      if ('documents'    in data) localStorage.setItem(KEY_DOCS,     JSON.stringify(data.documents    || []));
+    } else {
+      throw new Error('Μη αναγνωρίσιμο format backup');
+    }
+
+    // refresh UI
+    cleanupOrphans();  // ← ΠΡΟΣΘΗΚΗ
+    renderStudents(q.value);
+    renderEnrollments();
+    renderPayments();
+    renderCharges(); // ➜ ώστε να εμφανιστούν και οι χρεώσεις από το backup
+
+    alert('Η εισαγωγή ολοκληρώθηκε.');
+  } catch (err) {
+    alert('Σφάλμα εισαγωγής: ' + err.message);
+  }
+  e.target.value = '';
+});
+
+/* ======= ENROLLMENTS (Tab) ======= */
+const enrTblBody=el('#enrTbl tbody'), enrCount=el('#enrCount'), enrYearEcho=el('#enrYearEcho');
+// ===== Charges UI refs =====
+const chargesSection = document.getElementById('chargesSection');
+const chgTblBody     = document.querySelector('#chgTbl tbody');
+const chgCount       = document.getElementById('chgCount');
+const chgDue         = document.getElementById('chgDue');
+const chgRefreshBtn  = document.getElementById('chgRefreshBtn');
+const chgLockBtn     = document.getElementById('chgLockBtn');
+const chgUnlockBtn   = document.getElementById('chgUnlockBtn');
+const chgAdjBtn      = document.getElementById('chgAdjBtn');
+// === Adjustment UI refs ===
+const adjModal  = document.getElementById('adjModal');
+const adjClose  = document.getElementById('adjClose');
+const adjForm   = document.getElementById('adjForm');
+const aj = {
+  kind:   document.getElementById('adjKind'),
+  amount: document.getElementById('adjAmount'),
+  ym:     document.getElementById('adjYm'),
+  due:    document.getElementById('adjDue'),
+  desc:   document.getElementById('adjDesc')
+};
+
+// Renderer των χρεώσεων για την επιλεγμένη εγγραφή/έτος
+function renderCharges(){
+  if(!chgTblBody) return;
+
+  // Εμφάνιση section μόνο όταν υπάρχει επιλεγμένη εγγραφή
+  chargesSection.style.display = selectedEnrollmentId ? '' : 'none';
+  if(!selectedEnrollmentId){ chgTblBody.innerHTML=''; chgCount.textContent='0'; chgDue.textContent='0€'; return; }
+
+  let list = chargeDB.all();
+  if(selectedStudentId)   list = list.filter(c => c.studentId === selectedStudentId);
+  if(selectedEnrollmentId)list = list.filter(c => c.enrollmentId === selectedEnrollmentId);
+  if(yearFilter.value)    list = list.filter(c => c.year === yearFilter.value);
+
+  // Ταξινόμηση: με βάση YYYY-MM, μετά τύπο
+  list.sort((a,b) => (a.ym||'').localeCompare(b.ym||'') || (a.type||'').localeCompare(b.type||''));
+
+  chgTblBody.innerHTML = list.map(c => {
+const st = chargeStatusById(c.id); // 'open'|'partial'|'paid'
+const stLabel = st==='paid' ? 'Εξοφλημένο' : (st==='partial' ? 'Μερικώς' : 'Ανοιχτό');
+let badge;
+if (c.type === 'adjustment') {
+  const lbl = (c.amount||0) < 0 ? 'Πίστωση' : 'Χρέωση';
+  badge = `<span class="badge ${ (c.amount||0) < 0 ? 'credit' : 'adjust' }">${lbl}</span>`;
+} else {
+  badge = `<span class="badge ${st}${c.locked?' locked':''}">${c.locked?'🔒 ':''}${stLabel}</span>`;
+}
+
+    const monthTxt = `${c.monthLabel||''} ${(c.ym||'').slice(0,4)}`;
+    return `<tr data-id="${c.id}">
+      <td>${monthTxt}</td>
+      <td>${c.description||''}</td>
+      <td>${c.type||''}</td>
+      <td>${fmtDate(c.dateDue)}</td>
+      <td>${(+c.amount||0).toFixed(2)}€</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  chgCount.textContent = String(list.length);
+
+// Υπόλοιπο (σύνολο): sum(ποσά) - sum(πληρωμές) σε ΟΛΕΣ τις χρεώσεις
+let total = 0;
+for (const c of list) {
+  const paid = allocationSumForCharge(c.id);
+  total += ((+c.amount)||0) - ((+paid)||0); // adjustments (+/-) μετράνε σωστά
+}
+chgDue.textContent = Math.max(0, total).toFixed(2) + '€';
+
+
+  // reset actions
+  chgLockBtn.disabled   = true;
+  chgUnlockBtn.disabled = true;
+  chgAdjBtn.disabled    = true;
+}
+
+// Επιλογή γραμμής χρέωσης (enable actions)
+document.querySelector('#chgTbl')?.addEventListener('click', e=>{
+  const tr = e.target.closest('tr'); if(!tr) return;
+  [...chgTblBody.children].forEach(r=>r.classList.remove('active'));
+  tr.classList.add('active');
+  const id = tr.dataset.id;
+  const c = chargeDB.all().find(x=>x.id===id); if(!c) return;
+
+  chgLockBtn.disabled   = !!c.locked;
+  chgUnlockBtn.disabled = !c.locked;
+  chgAdjBtn.disabled    = false;
+});
+
+chgRefreshBtn?.addEventListener('click', renderCharges);
+chgLockBtn?.addEventListener('click', ()=>{
+  const tr = chgTblBody.querySelector('tr.active'); if(!tr) return;
+  const id = tr.dataset.id; const c = chargeDB.all().find(x=>x.id===id); if(!c) return;
+  c.locked = true; c.updated_at = new Date().toISOString(); chargeDB.upsert(c); renderCharges();
+});
+chgUnlockBtn?.addEventListener('click', ()=>{
+  const tr = chgTblBody.querySelector('tr.active'); if(!tr) return;
+  const id = tr.dataset.id; const c = chargeDB.all().find(x=>x.id===id); if(!c) return;
+  c.locked = false; c.updated_at = new Date().toISOString(); chargeDB.upsert(c); renderCharges();
+});
+chgAdjBtn?.addEventListener('click', () => {
+  // Χρειάζεται επιλεγμένη χρέωση (μήνας)
+  const tr = chgTblBody.querySelector('tr.active');
+  if (!tr) { alert('Επίλεξε μία χρέωση/μήνα από τη λίστα.'); return; }
+  const c = chargeDB.all().find(x => x.id === tr.dataset.id);
+  if (!c) { alert('Δεν βρέθηκε η χρέωση.'); return; }
+
+  // Προ-συμπλήρωση
+  aj.kind.value   = 'credit';
+  aj.amount.value = '';
+  aj.ym.value     = (c.ym || new Date().toISOString().slice(0,7));
+  aj.due.value    = (c.dateDue || '');
+  aj.desc.value   = c.type==='tuition' ? `Adjustment ${c.monthLabel} ${(c.ym||'').slice(0,4)}` : 'Adjustment';
+
+  openModal(adjModal);
+});
+
+adjClose?.addEventListener('click', () => closeModal(adjModal));
+adjModal?.addEventListener('click', e => { if (e.target === adjModal) closeModal(adjModal); });
+
+adjForm?.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+
+  const amount = parseFloat(aj.amount.value || '0');
+  if (!(amount > 0)) { alert('Δώσε ποσό > 0'); return; }
+
+  const sign = aj.kind.value === 'credit' ? -1 : 1;
+
+  // Parse YYYY-MM
+  const ym = aj.ym.value;
+  const [yy, mm] = ym.split('-').map(n => parseInt(n,10));
+  if (!yy || !mm) { alert('Μη έγκυρος μήνας.'); return; }
+  const d = new Date(yy, mm - 1, 1);
+
+  const rec = {
+    id: uid(),
+    studentId: selectedStudentId,
+    enrollmentId: selectedEnrollmentId,
+    type: 'adjustment',
+    description: (aj.desc.value || '').trim() || (sign < 0 ? 'Πίστωση' : 'Χρέωση') + ` ${greekMonthName(mm-1)} ${yy}`,
+    dateDue: (aj.due.value || new Date(yy, mm-1, 10).toISOString().slice(0,10)),
+    amount: sign * amount,
+    vatRate: 0,
+    exemptionReason: 'VAT-exempt education',
+    e3Code: null,
+    year: academicYearFromDate(d),
+    ym: ym,
+    monthLabel: greekMonthName(mm-1),
+    locked: false,
+    updated_at: new Date().toISOString()
+  };
+
+  chargeDB.upsert(rec);
+  closeModal(adjModal);
+  renderCharges();
+});
+
+const enrNewBtn=el('#enrNewBtn'), enrDelBtn=el('#enrDelBtn');
+const enrModal=el('#enrModal'), enrClose=el('#enrClose');
+const enrForm=el('#enrForm'), enrFormTitle=el('#enrFormTitle');
+const ef={id:el('#enrId'),year:el('#enrYear'),school:el('#enrSchool'),class:el('#enrClass'),govYear:el('#enrGovYear'),semester:el('#enrSemester'),regDate:el('#enrDate'),teacher:el('#enrTeacher'),govReg:el('#enrGovReg'),notes:el('#enrNotes')};
+// === Plan UI refs ===
+const enrPlanBtn = document.getElementById('enrPlanBtn');
+enrPlanBtn.disabled = true; // αρχικά off
+
+const planModal  = document.getElementById('planModal');
+const planClose  = document.getElementById('planClose');
+const planForm   = document.getElementById('planForm');
+const p = {
+  id:        document.getElementById('planId'),
+  monthly:   document.getElementById('planMonthly'),
+  startYm:   document.getElementById('planStartYm'),
+  months:    document.getElementById('planMonths'),
+  regFee:    document.getElementById('planRegFee'),
+  futureOnly:document.getElementById('planFutureOnly'),
+  dueDay:    document.getElementById('planDueDay'),
+  notes:     document.getElementById('planNotes')
+};
+
+// Ζωντανή ανανέωση της προεπισκόπησης μόλις αλλάζει κάτι στο πλάνο
+['monthly','startYm','months','regFee','dueDay','futureOnly','notes'].forEach(k=>{
+  if (p[k]) {
+    const evt = (k==='futureOnly' ? 'change' : 'input');
+    p[k].addEventListener(evt, buildPlanPreview);
+  }
+});
+
+fillYearSelect(yearFilter); fillYearSelect(ef.year);
+yearFilter.value=academicYears()[0];
+ef.year.value=yearFilter.value;
+
+function disableEnrollmentForm(disabled){
+  [ef.year,ef.school,ef.class,ef.teacher,ef.semester,ef.regDate,ef.govYear,ef.govReg,ef.notes, el('#enrSaveBtn')].forEach(x=>x.disabled=disabled);
+  enrNewBtn.disabled=disabled || !selectedStudentId;
+  if(disabled){ enrForm.reset(); ef.id.value=''; }
+}
+
+migrateCatalogs();
+fillSchoolSelect(ef.school);
+fillClassSelect(ef.class, ef.school.value);
+fillYearOfStudySelect(ef.govYear, ef.school.value, ef.class.value);
+fillYearSelect(ef.year);
+
+// συνδέσεις
+ef.school.onchange = () => {
+  fillClassSelect(ef.class, ef.school.value);
+  ef.class.value = '';
+  fillYearOfStudySelect(ef.govYear, ef.school.value, '');
+  ef.govYear.value = '';
+};
+ef.class.onchange = () => {
+  fillYearOfStudySelect(ef.govYear, ef.school.value, ef.class.value);
+  ef.govYear.value = '';
+};
+
+
+
+
+function clearEnrForm(){ enrForm.reset(); ef.id.value=''; ef.govYear.value = ''; ef.govReg.checked = false; enrFormTitle.textContent='Καταχώρηση Εγγραφής'; ef.year.value=yearFilter.value; ef.regDate.value = todayISO(); }
+el('#enrClearBtn').addEventListener('click',clearEnrForm);enrPlanBtn.disabled = true;
+
+// Open/Close modal
+enrNewBtn.addEventListener('click',()=>{
+  clearEnrForm();
+  if(!selectedStudentId){alert('Επίλεξε σπουδαστή.');return;}
+  disableEnrollmentForm(false);   // ➜ Ξεκλειδώνει τα inputs
+  openModal(enrModal);
+  // ... αφού ορίσεις selectedEnrollmentId και κάνεις highlight
+  enrPlanBtn.disabled = false; // κι εδώ on, για συνέπεια
+  
+});
+
+enrClose.addEventListener('click',()=>closeModal(enrModal));
+enrModal.addEventListener('click',e=>{ if(e.target===enrModal) closeModal(enrModal); });
+
+// Άνοιγμα modal Πλάνου
+enrPlanBtn.addEventListener('click', () => {
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+  // Φόρτωση υπάρχοντος πλάνου (αν υπάρχει)
+  const pl = planDB.all().find(x => x.enrollmentId === selectedEnrollmentId) || null;
+  if (pl) {
+    p.id.value      = pl.id;
+    p.monthly.value = pl.monthlyAmount ?? '';
+    p.startYm.value = pl.startYm ?? '';
+    p.months.value  = pl.monthsActive ?? '';
+    p.regFee.value  = pl.registrationFee ?? '';
+    p.notes.value   = pl.notes ?? '';
+  } else {
+    planForm.reset();
+    p.id.value = '';
+    // defaults: έναρξη από Σεπτέμβριο του επιλεγμένου έτους, αλλιώς τρέχον μήνα
+    const ysel = yearFilter.value; // π.χ. "2025-26"
+    const start = ysel ? `${ysel.split('-')[0]}-09` : new Date().toISOString().slice(0,7);
+    p.startYm.value = start;
+    p.dueDay.value = 10;
+    p.futureOnly.checked = true;
+  }
+ p.months.value = '';
+openModal(planModal);
+buildPlanPreview(); // ΝΕΟ
+renderPlanRealChargesInModal();
+
+});
+
+yearFilter.addEventListener('change', () => {
+  renderPlanRealChargesInModal();
+});
+
+// Κλείσιμο modal
+planClose.addEventListener('click', () => closeModal(planModal));
+planModal.addEventListener('click', e => { if (e.target === planModal) closeModal(planModal); });
+
+planForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+
+  const plan = {
+    id:              p.id.value || uid(),
+    studentId:       selectedStudentId,
+    enrollmentId:    selectedEnrollmentId,
+    monthlyAmount:   parseFloat(p.monthly.value || '0'),
+    startYm:         p.startYm.value,
+    monthsActive:    parseInt(p.months.value || '0', 10),
+    registrationFee: parseFloat(p.regFee.value || '0'),
+    notes:           (p.notes.value || '').trim(),
+    updated_at:      new Date().toISOString()
+  };
+
+  if (!(plan.monthlyAmount >= 0) || !(plan.monthsActive > 0) || !plan.startYm) {
+    alert('Συμπλήρωσε σωστά: Μηνιαίο ποσό, Έναρξη, Διάρκεια.');
+    return;
+  }
+
+  planDB.upsert(plan);
+
+  const dueDay = Math.max(1, Math.min(28, parseInt(p.dueDay.value || '10', 10)));
+  const ids = generateChargesForPlan(plan, {
+    recreateFutureOnly: !!p.futureOnly.checked,
+    defaultDueDay: dueDay
+  });
+
+  closeModal(planModal);
+  alert(`Το πλάνο αποθηκεύτηκε.\nΔημιουργήθηκαν/ενημερώθηκαν ${ids.length} χρεώσεις.`);
+  renderPlanRealChargesInModal(); // ← ΠΡΟΣΘΗΚΗ
+  renderCharges();                // ← ΠΡΟΣΘΗΚΗ
+
+});
+
+function renderEnrollments(){
+  enrYearEcho.textContent = yearFilter.value || '—';
+  if(!yearFilter.value) yearFilter.value=academicYears()[0];
+
+  let list=enrDB.all();
+  if(selectedStudentId) list=list.filter(e=>e.studentId===selectedStudentId);
+  if(yearFilter.value) list=list.filter(e=>e.year===yearFilter.value);
+
+enrTblBody.innerHTML = list.map(e => `
+  <tr data-id="${e.id}" class="${e.id===selectedEnrollmentId?'active':''}">
+    <td class="sel">
+      <input type="radio" class="enrSelect" name="enrSelect"
+             data-id="${e.id}" ${e.id===selectedEnrollmentId ? 'checked' : ''}>
+    </td>
+    <td>${e.year}</td>
+    <td>${e.school||''}</td>
+    <td>${e.class||''}</td>
+    <td>${e.teacher||''}</td>
+    <td>${fmtDate(e.regDate)}</td>
+    <td><button class="btn light enrViewBtn" data-id="${e.id}">Προβολή</button></td>
+  </tr>`).join('');
+
+  enrCount.textContent=list.length;
+  // if previous selected enrollment not present, clear selection + lock payments
+  if (selectedEnrollmentId && !list.some(x=>x.id===selectedEnrollmentId)) {
+    selectedEnrollmentId=null; clearEnrForm(); disablePaymentForm(true);
+  }
+  enrDelBtn.disabled=!selectedEnrollmentId;
+  enrNewBtn.disabled=!selectedStudentId;
+  enrPlanBtn.disabled = !selectedEnrollmentId; // on μόνο όταν υπάρχει ενεργή επιλογή
+  renderCharges(); // ΝΕΟ
+  enrExamBtn.disabled = !selectedEnrollmentId;
+
+}
+yearFilter.addEventListener('change',()=>{ renderEnrollments(); renderPayments(); renderCharges(); });
+
+enrForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!selectedStudentId){ alert('Επίλεξε σπουδαστή.'); return; }
+  const rec={
+    id: ef.id.value || uid(),
+    studentId: selectedStudentId,
+    year: ef.year.value || yearFilter.value,
+    school: ef.school.value.trim(),
+    class: ef.class.value.trim(),
+    teacher: ef.teacher.value.trim(),
+    semester: ef.semester.value,
+    regDate: ef.regDate.value || null,
+    govYear: (ef.govYear.value || '').trim(),
+    govReg:  !!ef.govReg.checked,
+    notes: ef.notes.value.trim(),
+    updated_at:new Date().toISOString()
+  };
+  if(!rec.school || !rec.class){ alert('Συμπλήρωσε Σχολή και Τάξη.'); return; }
+  enrDB.upsert(rec);
+  ef.id.value=rec.id; enrFormTitle.textContent='Επεξεργασία Εγγραφής';
+  selectedEnrollmentId=rec.id;
+  renderEnrollments(); renderPayments();
+  renderCharges(); // ΝΕΟ
+  closeModal(enrModal);
+});
+
+enrTblBody.addEventListener('click', e => {
+  if (!e.target.classList.contains('enrViewBtn')) return;
+  const id = e.target.dataset.id;
+  selectedEnrollmentId = id;
+  const rec = enrDB.all().find(x => x.id === id);
+  if (!rec) return;
+
+  // γέμισμα πεδίων …
+  ef.id.value       = rec.id;
+  ef.year.value     = rec.year || '';
+  ef.school.value   = rec.school || '';
+  ef.class.value    = rec.class || '';
+  ef.teacher.value  = rec.teacher || '';
+  ef.semester.value = rec.semester || '';
+  ef.regDate.value  = toISO(rec.regDate);
+  ef.govYear.value  = rec.govYear || '';
+  ef.govReg.checked = !!rec.govReg;
+
+  ef.notes.value    = rec.notes || '';
+
+  enrFormTitle.textContent = 'Επεξεργασία Εγγραφής';
+
+  [...enrTblBody.children].forEach(r => r.classList.remove('active'));
+  e.target.closest('tr').classList.add('active');
+
+
+ // ✅ Τσέκαρε το radio της ίδιας γραμμής
+  const radio = e.target.closest('tr').querySelector('input[type="radio"]');
+  if (radio) {
+    radio.checked = true;
+  }
+
+  disableEnrollmentForm(false);
+  disablePaymentForm(false);
+  renderPayments();
+  enrDelBtn.disabled = false;
+  enrExamBtn.disabled = false;
+  enrPlanBtn.disabled = false;
+  openModal(enrModal);
+});
+
+
+// Βοηθητικό: φέρνει την πιο πρόσφατη εξέταση για την επιλεγμένη εγγραφή (και έτος φίλτρου)
+function getLatestExamForEnrollment(enrollmentId, year){
+  let list = examDB.all().filter(x => x.enrollmentId === enrollmentId);
+  if (year) list = list.filter(x => x.year === year);
+  if (!list.length) return null;
+  // ταξινόμηση: με ημερομηνία (desc), έπειτα updated_at (desc)
+  list.sort((a,b) => new Date(b.date||0) - new Date(a.date||0) || new Date(b.updated_at||0) - new Date(a.updated_at||0));
+  return list[0];
+}
+
+enrExamBtn.addEventListener('click', () => {
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+
+  // ψάξε αν υπάρχει ήδη εξέταση για αυτή την εγγραφή (και έτος)
+  const existing = getLatestExamForEnrollment(selectedEnrollmentId, yearFilter.value);
+
+  examForm.reset();
+
+  if (existing) {
+    // === EDIT: φόρτωσε τα στοιχεία της τελευταίας εξέτασης ===
+    ex.id.value    = existing.id;
+    ex.date.value  = existing.date || new Date().toISOString().slice(0,10);
+    ex.subj.value  = existing.subject || '';
+    ex.type.value  = existing.type || 'final';
+    ex.fee.value   = existing.fee ?? 0;
+    ex.res.value   = existing.result || '';
+    ex.grade.value = existing.grade || '';
+    ex.cert.value  = existing.cert || '';
+    ex.notes.value = existing.notes || '';
+    ex.makeCharge.checked = !!existing.chargeId && (existing.fee||0) > 0;
+  } else {
+    // === NEW: defaults ===
+    ex.id.value   = '';
+    ex.date.value = new Date().toISOString().slice(0,10);
+    ex.subj.value = '';
+    ex.type.value = 'final';
+    ex.fee.value  = '';
+    ex.res.value  = '';
+    ex.grade.value= '';
+    ex.cert.value = '';
+    ex.notes.value= '';
+    ex.makeCharge.checked = true;
+  }
+
+  openModal(examModal);
+});
+
+examClose.addEventListener('click', () => closeModal(examModal));
+examModal.addEventListener('click', e => { if (e.target === examModal) closeModal(examModal); });
+
+examForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+
+  const fee = parseFloat(ex.fee.value || '0') || 0;
+  const wantCharge = !!ex.makeCharge.checked;
+
+  // Παλιά εγγραφή (αν κάνουμε edit)
+  const prevExam = ex.id.value ? examDB.all().find(x => x.id === ex.id.value) : null;
+
+  // ===== 1) Φτιάξε / ενημέρωσε το exam record =====
+  const rec = {
+    id: ex.id.value || uid(),
+    studentId: selectedStudentId,
+    enrollmentId: selectedEnrollmentId,
+    date: ex.date.value || new Date().toISOString().slice(0,10),
+    subject: (ex.subj.value || '').trim(),
+    type: ex.type.value || 'final',
+    fee: fee,
+    result: ex.res.value || '',
+    grade: (ex.grade.value || '').trim(),
+    cert: (ex.cert.value || '').trim(),
+    notes: (ex.notes.value || '').trim(),
+    year: yearFilter.value || null,
+    // κρατάμε τυχόν παλιό chargeId
+    chargeId: prevExam?.chargeId || null,
+    updated_at: new Date().toISOString(),
+    created_at: prevExam ? prevExam.created_at : new Date().toISOString()
+  };
+
+  // ===== 2) Συγχρονισμός Χρέωσης εξέτασης =====
+  const hadCharge = !!rec.chargeId;
+
+  if (wantCharge && fee > 0) {
+    if (hadCharge) {
+      // UPDATE υπάρχουσας χρέωσης
+      const c = chargeDB.all().find(c => c.id === rec.chargeId);
+      if (c) {
+        const d = new Date(rec.date);
+        c.description = rec.subject ? `Εξέταση: ${rec.subject}` : 'Εξέταση';
+        c.dateDue     = rec.date;
+        c.amount      = fee;
+        c.monthLabel  = greekMonthName(d.getMonth());
+        c.ym          = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        c.year        = academicYearFromDate(d);
+        c.updated_at  = new Date().toISOString();
+        chargeDB.upsert(c);
+      } else {
+        // chargeId “χάθηκε” → δημιουργία νέας και διόρθωση στο exam
+        const d = new Date(rec.date);
+        const newCharge = {
+          id: uid(),
+          studentId: selectedStudentId,
+          enrollmentId: selectedEnrollmentId,
+          type:'exam',
+          description: rec.subject ? `Εξέταση: ${rec.subject}` : 'Εξέταση',
+          dateDue: rec.date,
+          amount: fee,
+          vatRate: 0,
+          exemptionReason:'VAT-exempt education',
+          e3Code: null,
+          year: academicYearFromDate(d),
+          ym: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+          monthLabel: greekMonthName(d.getMonth()),
+          locked:false,
+          updated_at: new Date().toISOString()
+        };
+        chargeDB.upsert(newCharge);
+        rec.chargeId = newCharge.id;
+      }
+    } else {
+      // CREATE νέα χρέωση
+      const d = new Date(rec.date);
+      const ch = {
+        id: uid(),
+        studentId: selectedStudentId,
+        enrollmentId: selectedEnrollmentId,
+        type:'exam',
+        description: rec.subject ? `Εξέταση: ${rec.subject}` : 'Εξέταση',
+        dateDue: rec.date,
+        amount: fee,
+        vatRate: 0,
+        exemptionReason:'VAT-exempt education',
+        e3Code: null,
+        year: academicYearFromDate(d),
+        ym: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+        monthLabel: greekMonthName(d.getMonth()),
+        locked:false,
+        updated_at: new Date().toISOString()
+      };
+      chargeDB.upsert(ch);
+      rec.chargeId = ch.id;
+    }
+  } else {
+    // Δεν θέλουμε χρέωση (ή fee=0): αν υπήρχε, προσπάθησε να τη διαγράψεις με ασφάλεια
+    if (hadCharge) {
+      const allocSum = allocationSumForCharge(rec.chargeId);
+      if (allocSum > 0.0001) {
+        alert('Η χρέωση εξέτασης έχει ήδη κατανομές/πληρωμές — δεν διαγράφεται. Απενεργοποιήθηκε μόνο η σύνδεση από το exam.');
+        // Σπάμε τη σύνδεση από το exam για να μην ξαναγίνει update της χρέωσης
+        rec.chargeId = null;
+      } else {
+        chargeDB.remove(rec.chargeId);
+        rec.chargeId = null;
+      }
+    }
+  }
+
+  // Τελικό upsert exam με ενημερωμένο chargeId (αν άλλαξε)
+  examDB.upsert(rec);
+
+  closeModal(examModal);
+  renderCharges();
+});
+
+// Επιλογή εγγραφής με κλικ στη γραμμή, ΧΩΡΙΣ να ανοίγει modal
+enrTblBody.addEventListener('click', e => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+
+  // Αν πάτησες το κουμπί "Προβολή", μην κάνεις τίποτα εδώ
+  if (e.target.classList.contains('enrViewBtn')) return;
+
+  selectedEnrollmentId = tr.dataset.id;
+  enrPlanBtn.disabled = false; // υπάρχει επιλεγμένη εγγραφή → άνοιξε το Πλάνο
+
+  // visual + τσέκαρε το radio
+  [...enrTblBody.children].forEach(r => r.classList.remove('active'));
+  tr.classList.add('active');
+  const rb = tr.querySelector('.enrSelect');
+  if (rb) rb.checked = true;   // χρησιμοποιούμε property, όχι setAttribute
+
+  // ενεργοποίηση πληρωμών & διαγραφής για την επιλεγμένη εγγραφή
+  disablePaymentForm(false);
+  renderPayments();
+  renderCharges(); // ΝΕΟ
+  enrDelBtn.disabled = false;
+  enrExamBtn.disabled = false;   // <-- ΠΡΟΣΘΗΚΗ
+  // ΣΚΟΠΙΜΑ: δεν καλούμε openModal ούτε disableEnrollmentForm(false)
+  // για να μην ανοίξει modal και να μείνει κλειδωμένη η φόρμα μέχρι να πατήσεις "Προβολή"
+});
+
+enrDelBtn.addEventListener('click',()=>{
+  if(!selectedEnrollmentId) return;
+  if(confirm('Διαγραφή εγγραφής; Θα διαγραφούν και οι πληρωμές της.')){
+    const remainPay=payDB.all().filter(p=>p.enrollmentId!==selectedEnrollmentId); payDB.save(remainPay);
+
+// 1) Σβήσε τις χρεώσεις που ανήκουν στην εγγραφή
+const allCharges = chargeDB.all();
+const toDeleteChargeIds = allCharges.filter(c => c.enrollmentId === selectedEnrollmentId).map(c => c.id);
+const remainCharges = allCharges.filter(c => c.enrollmentId !== selectedEnrollmentId);
+chargeDB.save(remainCharges);
+
+// 2) Σβήσε allocations που δείχνουν σε ΠΛΗΡΩΜΕΣ που έσβησες ή σε ΧΡΕΩΣΕΙΣ που έσβησες
+const existingPayments = new Set(payDB.all().map(p => p.id));     // μετά το remainPay save
+const existingCharges  = new Set(chargeDB.all().map(c => c.id));  // μετά το remainCharges save
+const remainAlloc = allocDB.all().filter(a => existingPayments.has(a.paymentId) && existingCharges.has(a.chargeId));
+allocDB.save(remainAlloc);
+
+    enrDB.remove(selectedEnrollmentId);
+    selectedEnrollmentId=null;
+    clearEnrForm(); renderEnrollments(); renderPayments(); renderCharges(); disablePaymentForm(true);
+  }
+});
+
+/* ======= PAYMENTS (Tab) ======= */
+const payTblBody=el('#payTbl tbody');
+const payNewBtn=el('#payNewBtn'), payDelBtn=el('#payDelBtn');
+const sumTotal=el('#sumTotal'), sumCount=el('#sumCount'), sumLast=el('#sumLast');
+const payModal=el('#payModal'), payClose=el('#payClose');
+const payForm=el('#payForm'), payFormTitle=el('#payFormTitle');
+const pf={id:el('#payId'),date:el('#payDate'),month:el('#payMonth'),amount:el('#payAmount'),method:el('#payMethod'),reason:el('#payReason'),notes:el('#payNotes'),batchId: el('#payBatchId')};
+const payYearEcho=el('#payYearEcho');
+
+// Actions bar του payment form
+const payActions   = document.querySelector('#payForm .actions');
+
+// Wrappers για να κρύβουμε/δείχνουμε ολόκληρα blocks
+const payMonthWrap = document.getElementById('payMonth')?.closest('div');
+const payNotesWrap = document.getElementById('payNotes')?.closest('div');
+
+// ===== Allocation UI refs =====
+const allocPanel   = document.getElementById('allocPanel');
+const allocTbody   = document.getElementById('allocTbody');
+const allocPayAmount = document.getElementById('allocPayAmount');
+const allocSum     = document.getElementById('allocSum');
+const allocRest    = document.getElementById('allocRest');
+const allocAutoBtn = document.getElementById('allocAutoBtn');
+const allocClearBtn= document.getElementById('allocClearBtn');
+// Read-only allocations (για μαζικές πληρωμές)
+const allocRoPanel = document.getElementById('allocRoPanel');
+const allocRoTbody = document.getElementById('allocRoTbody');
+const allocRoMeta  = document.getElementById('allocRoMeta');
+
+function renderAllocationsForPayment(paymentId, paymentRec=null){
+  if (!allocRoPanel || !allocRoTbody) return;
+
+  const allocs = allocDB.all().filter(a => a.paymentId === paymentId);
+  if (!allocs.length) {
+    allocRoTbody.innerHTML = `<tr><td colspan="6" class="muted">Δεν υπάρχουν κατανομές για αυτή την πληρωμή.</td></tr>`;
+    if (allocRoMeta && paymentRec?.batchId) allocRoMeta.textContent = `Batch: ${paymentRec.batchId}`;
+    return;
+  }
+
+  const chargesById = Object.fromEntries(chargeDB.all().map(c => [c.id, c]));
+  let totalCov = 0;
+
+  allocRoTbody.innerHTML = allocs.map(a => {
+    const c = chargesById[a.chargeId];
+    if (!c) return `<tr><td colspan="6" class="muted">[Χρέωση δεν βρέθηκε]</td></tr>`;
+    const paid = allocationSumForCharge(c.id);
+    const st   = chargeStatusById(c.id);
+    const stLabel = st==='paid' ? 'Εξοφλημένο' : (st==='partial' ? 'Μερικώς' : 'Ανοιχτό');
+    const monthTxt = `${c.monthLabel || ''} ${(c.ym||'').slice(0,4)}`;
+    const cov = (+a.amount || 0);
+    totalCov += cov;
+    return `
+      <tr>
+        <td>${monthTxt}</td>
+        <td>${c.description || ''}</td>
+        <td>${fmtDate(c.dateDue)}</td>
+        <td>${(+c.amount||0).toFixed(2)}€</td>
+        <td>${cov.toFixed(2)}€</td>
+        <td><span class="badge ${st}">${stLabel}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  if (allocRoMeta) {
+    const parts = [];
+    if (paymentRec?.batchId) parts.push(`Batch: ${paymentRec.batchId}`);
+    parts.push(`Κατανομές: ${allocs.length}`);
+    parts.push(`Σύνολο: ${totalCov.toFixed(2)}€`);
+    allocRoMeta.textContent = parts.join(' • ');
+  }
+
+// Footer values για read-only modal
+const gross   = +(paymentRec?.amount || 0);             // ποσό πληρωμής (σύνολο χρέωσης)
+const disc    = +(paymentRec?.discountTotal || 0);      // συνολική έκπτωση (αν την αποθηκεύεις)
+const final   = Math.max(0, +(gross - disc).toFixed(2));
+
+const set = (sel, val) => { const n = document.querySelector(sel); if (n) n.textContent = val; };
+set('#allocRoSum',   gross.toFixed(2) + '€');
+set('#allocRoDisc',  disc.toFixed(2)  + '€');
+set('#allocRoFinal', final.toFixed(2) + '€');
+
+
+}
+
+// ===== Mass Payment UI refs =====
+const massPayBtn      = document.getElementById('massPayBtn');
+const massPayModal    = document.getElementById('massPayModal');
+const massPayClose    = document.getElementById('massPayClose');
+const massPayForm     = document.getElementById('massPayForm');
+const massDiscountInput = document.getElementById('massDiscountInput');
+
+massDiscountInput?.addEventListener('input', () => {
+  updateMassDiscountRows();   // ✅ αντί μόνο για updateMassDiscountRows()
+  recomputeMassTotals();
+});
+
+const mp = {
+  date:   document.getElementById('massPayDate'),
+  amount: document.getElementById('massPayAmount'),
+  method: document.getElementById('massPayMethod'),
+  reason: document.getElementById('massPayReason'),
+  
+  month:  document.getElementById('massMonth'),
+  
+  saveBtn: document.getElementById('massPaySaveBtn')
+};
+
+const massAllocTbody     = document.getElementById('massAllocTbody');
+const massAllocPayAmount = document.getElementById('massAllocPayAmount');
+const massAllocSum       = document.getElementById('massAllocSum');
+const massAllocRest      = document.getElementById('massAllocRest');
+const massAllocAutoBtn   = document.getElementById('massAllocAutoBtn');
+const massAllocClearBtn  = document.getElementById('massAllocClearBtn');
+
+// Βοηθητικό για months dropdown στο modal
+const MONTHS_GR = ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+function fillMonthSelect(sel){ sel.innerHTML = MONTHS_GR.map((m,i)=>`<option value="${i+1}">${m}</option>`).join(''); }
+
+// Επιστρέφει τις ΑΝΟΙΧΤΕΣ χρεώσεις της επιλεγμένης εγγραφής (και έτους)
+function getOpenChargesForEnrollment() {
+  if (!selectedEnrollmentId) return [];
+  let list = chargeDB.all().filter(c => c.enrollmentId === selectedEnrollmentId);
+  if (yearFilter.value) list = list.filter(c => c.year === yearFilter.value);
+  // Υπόλοιπο = ποσό - ήδη πληρωμένο
+  return list.map(c => {
+    const paid = allocationSumForCharge(c.id);
+    const remain = ((+c.amount)||0) - ((+paid)||0);
+    return {...c, remain: remain};
+  }).filter(c => c.remain > 0.0001) // μόνο όσες έχουν υπόλοιπο
+    .sort((a,b) => (a.ym||'').localeCompare(b.ym||'') || (a.type||'').localeCompare(b.type||''));
+}
+
+// Φτιάχνει το UI των allocations. Αν δοθεί paymentId, προ-γεμίζει από υπάρχουσες allocations.
+function buildAllocationUI(paymentId=null){
+  const charges = getOpenChargesForEnrollment();
+  const payAmt  = parseFloat(pf.amount.value || '0') || 0;
+
+  allocPayAmount.textContent = payAmt.toFixed(2)+'€';
+
+  if (!charges.length) {
+    allocTbody.innerHTML = `<tr><td colspan="5" class="muted">Δεν υπάρχουν ανοιχτές χρεώσεις.</td></tr>`;
+    allocSum.textContent = '0.00€';
+    allocRest.textContent= payAmt.toFixed(2)+'€';
+    return;
+  }
+
+  // Χάρτης προηγούμενων allocations (για edit)
+  const prev = {};
+  if (paymentId) {
+    allocDB.all().filter(a => a.paymentId === paymentId).forEach(a => { prev[a.chargeId] = (+a.amount)||0; });
+  }
+
+  allocTbody.innerHTML = charges.map(c => {
+    const monthTxt = `${c.monthLabel||''} ${(c.ym||'').slice(0,4)}`;
+    const prevAmount = prev[c.id] || 0;
+    const max = Math.max(0, c.remain + prevAmount); // αν είχαμε παλιό allocation, επιτρέπουμε μέχρι remain+παλιό
+    return `<tr data-charge-id="${c.id}">
+      <td>${monthTxt}</td>
+      <td>${c.description||''}</td>
+      <td class="money">${(c.remain).toFixed(2)}€</td>
+      <td><input class="allocAmount" type="number" step="0.01" min="0" max="${max.toFixed(2)}" value="${prevAmount ? prevAmount.toFixed(2) : ''}" placeholder="0.00"></td>
+    </tr>`;
+  }).join('');
+
+  recomputeAllocationTotals();
+}
+
+// Υπολογίζει σύνολο & υπόλοιπο
+function recomputeAllocationTotals(){
+  const payAmt = parseFloat(pf.amount.value || '0') || 0;
+  const inputs = [...allocTbody.querySelectorAll('.allocAmount')];
+  const sum = inputs.reduce((s,inp)=> s + (parseFloat(inp.value||'0')||0), 0);
+  allocSum.textContent = sum.toFixed(2)+'€';
+  const rest = Math.max(0, payAmt - sum);
+  allocRest.textContent = rest.toFixed(2)+'€';
+}
+
+// Auto-FIFO: μοιράζει το ποσό πληρωμής από τον παλαιότερο μήνα
+function autoFIFO(){
+  const payAmt = parseFloat(pf.amount.value || '0') || 0;
+  if (payAmt <= 0) { recomputeAllocationTotals(); return; }
+
+  // Πάρε τις γραμμές με σειρά
+  const rows = [...allocTbody.querySelectorAll('tr[data-charge-id]')];
+  let remaining = payAmt;
+  rows.forEach(tr => {
+    const max = parseFloat(tr.querySelector('.allocAmount').getAttribute('max') || '0') || 0;
+    const put = Math.min(max, remaining);
+    tr.querySelector('.allocAmount').value = put ? put.toFixed(2) : '';
+    remaining -= put;
+  });
+  recomputeAllocationTotals();
+}
+
+// Μηδενισμός όλων των ποσών
+function clearAllocationsUI(){
+  [...allocTbody.querySelectorAll('.allocAmount')].forEach(inp => inp.value='');
+  recomputeAllocationTotals();
+}
+
+// ====== Mass Payment logic ======
+
+// Φέρνει ανοιχτές χρεώσεις για ΟΛΕΣ τις εγγραφές του μαθητή, φιλτραρισμένες
+function getOpenChargesForStudent() {
+  if (!selectedStudentId) return [];
+
+  // --- caches (λιγότερα .all())
+  const allCharges = chargeDB.all();
+  const allEnrolls = enrDB.all();
+
+  // 1) όλες οι χρεώσεις του μαθητή
+  let list = allCharges.filter(c => c.studentId === selectedStudentId);
+
+  // 2) κράτα μόνο έγκυρες εγγραφές ή γενικές (enrollmentId=null)
+  if (allEnrolls.length) {
+    const enrIds = new Set(allEnrolls.map(e => e.id));
+    list = list.filter(c => !c.enrollmentId || enrIds.has(c.enrollmentId));
+  }
+
+  // 3) φίλτρο ακαδημαϊκού έτους
+  if (yearFilter.value) {
+    const y = yearFilter.value;
+    list = list.filter(c => c.year === y);
+  }
+
+  // 4) φίλτρο ΣΥΓΚΕΚΡΙΜΕΝΟΥ μήνα (1..12) από το dropdown
+  const want = parseInt(mp?.month?.value || '0', 10);
+  if (want >= 1 && want <= 12) {
+    list = list.filter(c => {
+      // ym: 'YYYY-MM' -> πάρε MM γρήγορα
+      const mm = parseInt(String(c.ym || '').slice(5, 7) || '0', 10);
+      return mm === want;
+    });
+  } else {
+    // δεν έχει διαλεγεί μήνας -> άδειασμα λίστας (συμπεριφορά που ζήτησες)
+    return [];
+  }
+
+  // 5) υπολόγισε υπόλοιπο και κράτα μόνο θετικά
+  const result = list.map(c => {
+    const paid = allocationSumForCharge(c.id);
+    const remain = ((+c.amount) || 0) - ((+paid) || 0);
+    return { ...c, remain };
+  }).filter(c => c.remain > 0.0001)
+    .sort((a, b) =>
+      String(a.ym || '').localeCompare(String(b.ym || '')) ||
+      String(a.type || '').localeCompare(String(b.type || ''))
+    );
+
+  return result;
+}
+
+function updateMassDiscountRows(){
+  // Καθάρισε παλιές γραμμές έκπτωσης
+  [...massAllocTbody.querySelectorAll('tr.row-discount-total')].forEach(tr => tr.remove());
+
+  const discount = parseFloat(massDiscountInput?.value || '0') || 0;
+  if (discount <= 0) return;
+
+  // Δημιούργησε μια συνολική αρνητική γραμμή
+  const row = document.createElement('tr');
+  row.className = 'row-discount-total';
+  row.innerHTML = `
+    <td></td>
+    <td class="muted">↳ Έκπτωση (μαζική)</td>
+    <td></td>
+    <td class="money neg">-${discount.toFixed(2)}€</td>
+    <td></td>
+  `;
+  massAllocTbody.appendChild(row);
+}
+
+function getMassUIState(){
+  const state = {};
+  [...massAllocTbody.querySelectorAll('tr[data-charge-id]')].forEach(tr => {
+    const id  = tr.dataset.chargeId;
+    const chk = tr.querySelector('.mass-alloc-check');
+    const inp = tr.querySelector('.massAllocAmount');
+    if (!id) return;
+    state[id] = {
+      checked: !!(chk && chk.checked),
+      value: inp && !inp.disabled ? (parseFloat(inp.value || '0') || 0) : 0
+    };
+  });
+  return state;
+}
+
+function buildMassAllocationUI(){
+  const prev    = getMassUIState();           // snapshot πριν το rebuild
+  const charges = getOpenChargesForStudent();
+  const payAmt  = parseFloat(mp.amount.value || '0') || 0;
+  massAllocPayAmount.textContent = payAmt.toFixed(2)+'€';
+
+if (!charges.length) {
+  massAllocTbody.innerHTML = `<tr><td colspan="5" class="muted">Δεν υπάρχουν ανοιχτές χρεώσεις.</td></tr>`;
+
+  // ✅ Καθάρισε ποσό & footer & έκπτωση
+  if (mp?.amount) mp.amount.value = '';
+  if (massDiscountInput) massDiscountInput.value = '';
+
+  massAllocPayAmount.textContent = '0.00€';
+  massAllocSum.textContent  = '0.00€';
+  massAllocRest.textContent = '0.00€';
+
+  mp.saveBtn.disabled = true;
+  return;
+}
+
+
+  const plan = computeMassDiscountPlan(massDiscountInput?.value);
+
+  massAllocTbody.innerHTML = charges.map(c => {
+    const max     = Math.max(0, c.remain);
+    const was     = prev[c.id];
+    const checked = was ? was.checked : true;
+
+    const share      = plan?.[c.id] || 0;                    // μερίδιο έκπτωσης για τη χρέωση
+    const suggested  = Math.max(0, round2(max - share));     // πλήρης μετά την έκπτωση
+    const val        = was ? was.value : suggested;          // ✅ ΧΡΗΣΗ suggested όταν δεν υπήρχε πριν
+
+    const monthTxt = `${c.monthLabel || ''} ${(c.ym||'').slice(0,4)}`;
+
+    let html = `
+      <tr data-charge-id="${c.id}">
+        <td><input type="checkbox" class="mass-alloc-check" ${checked ? 'checked' : ''}></td>
+        <td>${monthTxt}</td>
+        <td>${c.description || ''}</td>
+        <td class="money">${c.remain.toFixed(2)}€</td>
+        <td>
+          <input class="massAllocAmount" type="number" step="0.01" min="0" readonly
+                 max="${max.toFixed(2)}"
+                 data-default="${suggested.toFixed(2)}"           
+                 value="${checked ? val.toFixed(2) : ''}"          
+                 ${checked ? '' : 'disabled'}
+                 placeholder="0.00">
+        </td>
+      </tr>
+    `;
+
+    // υπο-γραμμή έκπτωσης αν υπάρχει μερίδιο
+    if (share > 0) {
+      html += `
+        <tr class="row-discount" data-charge-id="${c.id}">
+          <td></td>
+          <td class="muted">↳ Έκπτωση (μαζική)</td>
+          <td></td>
+          <td class="money neg">-${share.toFixed(2)}€</td>
+          <td></td>
+        </tr>
+      `;
+    }
+    return html;
+  }).join('');
+
+  mp.saveBtn.disabled = false;
+  recomputeMassTotals(); // θα συγχρονίσει και το κλειδωμένο ποσό
+}
+
+
+function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
+
+function recomputeMassTotals(){
+  // 1) Σύνολο χρέωσης = άθροισμα remain των επιλεγμένων
+  let gross = 0;
+  const rows = [...massAllocTbody.querySelectorAll('tr[data-charge-id]')];
+  if (!rows.length) {
+    if (mp?.amount) mp.amount.value = '';
+    const set = (sel,val)=>{ const n=document.querySelector(sel); if(n) n.textContent=val; };
+    set('#massAllocSum','0.00€'); set('#massAllocRest','0.00€'); set('#massAllocPayAmount','0.00€');
+    if (mp?.saveBtn) mp.saveBtn.disabled = true;
+    return { base: 0, discount: 0, total: 0 };
+  }
+
+  rows.forEach(tr => {
+    const chk = tr.querySelector('.mass-alloc-check');
+    if (!chk || !chk.checked) return;
+    const max = parseFloat(tr.querySelector('.massAllocAmount')?.getAttribute('max') || '0') || 0;
+    gross += max;
+  });
+
+gross = round2(gross);
+let disc  = round2(Math.max(0, parseFloat(massDiscountInput?.value || '0') || 0));
+let final = round2(Math.max(0, gross - disc)); // τελικό ποσό χρέωσης για ΕΜΦΑΝΙΣΗ
+
+// 2) Footer: δείξε gross, disc, final
+const set = (sel, val) => { const n = document.querySelector(sel); if (n) n.textContent = val; };
+set('#massAllocSum',       gross.toFixed(2) + '€'); // Σύνολο χρέωσης
+set('#massAllocRest',      disc.toFixed(2)  + '€'); // Έκπτωση
+set('#massAllocPayAmount', final.toFixed(2) + '€'); // Τελικό ποσό χρέωσης (για εμφάνιση)
+
+// 3) Input ποσού: ΜΕΝΕΙ = gross (ώστε η πληρωμή να μην “κόβει” την έκπτωση)
+if (mp?.amount) mp.amount.value = gross.toFixed(2);
+
+// 4) Enable/disable
+if (mp?.saveBtn) mp.saveBtn.disabled = !(final > 0);
+
+return { base: gross, discount: disc, final };
+}
+
+function addDiscountToCharge(chargeId, {amount, note='Μαζική έκπτωση', type='bulk'}){
+  const all = chargeDB.all();
+  const i = all.findIndex(c=>c.id===chargeId);
+  if (i<0) return;
+  const c = all[i];
+  if (!Array.isArray(c.discounts)) c.discounts = [];
+  c.discounts.push({ id: uid(), type, amount: +amount||0, note, dateApplied: new Date().toISOString().slice(0,10) });
+  all[i] = c; chargeDB.save(all);
+}
+
+function resetMassInputs(){
+  if (mp?.amount) mp.amount.value = '';
+  if (massDiscountInput) massDiscountInput.value = '';
+  // καθάρισε και τις κατανομές
+  [...massAllocTbody.querySelectorAll('.massAllocAmount')].forEach(inp => inp.value='');
+  // μηδένισε footer
+  const set = (sel,val)=>{ const n=document.querySelector(sel); if(n) n.textContent=val; };
+  set('#massAllocSum','0.00€');
+  set('#massAllocRest','0.00€');
+  set('#massAllocPayAmount','0.00€');
+  recomputeMassTotals();
+}
+
+function massAutoFIFO(){
+  const payAmt = parseFloat(mp.amount.value || '0') || 0;
+  if (payAmt <= 0) { recomputeMassTotals(); return; }
+
+  const rows = [...massAllocTbody.querySelectorAll('tr[data-charge-id]')];
+  let remaining = payAmt;
+
+  rows.forEach(tr => {
+    const chk = tr.querySelector('.mass-alloc-check');
+    const inp = tr.querySelector('.massAllocAmount');
+    const max = parseFloat(inp.getAttribute('max') || '0') || 0;
+
+    if (!chk.checked) { inp.value = ''; return; }
+
+    const put = Math.min(max, remaining);
+    inp.value = put ? put.toFixed(2) : '';
+    remaining -= put;
+  });
+
+  recomputeMassTotals();
+}
+
+function clearMassAllocUI(){
+  [...massAllocTbody.querySelectorAll('.massAllocAmount')].forEach(inp => inp.value='');
+  recomputeMassTotals();
+}
+
+function computeMassDiscountPlan(totalDisc) {
+  totalDisc = Math.max(0, +totalDisc || 0);
+  if (totalDisc <= 0) return {};
+
+  // Βρες τις ΕΠΙΛΕΓΜΕΝΕΣ χρεώσεις από το UI
+  const rows = [...massAllocTbody.querySelectorAll('tr[data-charge-id]')];
+  const items = rows.map(tr => {
+    const chk = tr.querySelector('.mass-alloc-check');
+    const inp = tr.querySelector('.massAllocAmount');
+    if (!chk || !chk.checked || !inp || inp.disabled) return null;
+
+    const chargeId = tr.dataset.chargeId;
+    const remain   = parseFloat(inp.getAttribute('max') || '0') || 0; // υπόλοιπο χρέωσης
+    return remain > 0 ? { tr, chargeId, remain } : null;
+  }).filter(Boolean);
+
+  if (!items.length) return {};
+
+  const totalRemain = items.reduce((s,x)=> s + x.remain, 0);
+  let left = Math.min(totalDisc, totalRemain);
+
+  // pro-rata μοιρασιά, τελευταία χρέωση παίρνει το υπόλοιπο για σεντς
+  const plan = {};
+  items.forEach((x, i) => {
+    if (left <= 0) return;
+    let share = Math.round((x.remain / totalRemain) * totalDisc * 100) / 100;
+    if (i === items.length - 1) share = left;
+    share = Math.min(share, x.remain);
+    if (share > 0) {
+      plan[x.chargeId] = share;
+      left -= share;
+    }
+  });
+  return plan; // {chargeId: amount, ...}
+}
+
+// Events του panel
+allocAutoBtn?.addEventListener('click', autoFIFO);
+allocClearBtn?.addEventListener('click', clearAllocationsUI);
+
+// Recompute όταν αλλάζει το ποσό πληρωμής ή οι κατανομές
+pf.amount.addEventListener('input', () => { buildAllocationUI(pf.id.value || null); });
+allocTbody?.addEventListener('input', e => { if (e.target.classList.contains('allocAmount')) recomputeAllocationTotals(); });
+
+
+function disablePaymentForm(disabled){
+[pf.date,pf.month,pf.amount,pf.method,pf.reason,pf.notes, el('#paySaveBtn')]
+  .forEach(x => { if (x) x.disabled = disabled; });
+  payNewBtn.disabled=disabled || !selectedEnrollmentId;
+  
+  if(disabled){ payForm.reset(); pf.id.value=''; }
+}
+function clearPayForm(){
+  payForm.reset(); pf.id.value='';
+  payFormTitle.textContent='Καταχώρηση Πληρωμής';
+  if (pf.batchId) pf.batchId.value = ''; // ← ΝΕΟ
+}
+el('#payClearBtn').addEventListener('click',clearPayForm);
+
+// Open/Close modal
+payNewBtn.addEventListener('click', ()=>{
+  if(!selectedEnrollmentId){ alert('Επίλεξε εγγραφή από το tab Εγγραφές.'); return; }
+  disablePaymentForm(false);   // ✅ προληπτικό enable της φόρμας
+  clearPayForm();
+  buildAllocationUI(null); // ← ΝΕΟ
+  // Νέα πληρωμή → editable panel on, read-only off
+if (allocRoPanel) allocRoPanel.style.display = 'none';
+if (allocPanel)   allocPanel.style.display   = '';
+const paySaveBtn = document.getElementById('paySaveBtn');
+if (paySaveBtn) paySaveBtn.disabled = false;
+
+if (payActions) payActions.style.display = '';   // δείξε τα κουμπιά
+
+// δείξε Μήνα & Σχόλια, ενεργό dropdown, actions on
+if (payMonthWrap) payMonthWrap.style.display = '';
+if (payNotesWrap) payNotesWrap.style.display = '';
+if (pf.month) pf.month.disabled = false;
+if (payActions) payActions.style.display = '';
+
+// read-only panel off, editable allocations on
+if (typeof allocRoPanel !== 'undefined' && allocRoPanel) allocRoPanel.style.display = 'none';
+if (typeof allocPanel   !== 'undefined' && allocPanel)   allocPanel.style.display   = '';
+
+
+openModal(payModal);
+});
+
+payClose.addEventListener('click',()=>closeModal(payModal));
+payModal.addEventListener('click',e=>{ if(e.target===payModal) closeModal(payModal); });
+
+function renderPayments(){
+  payYearEcho.textContent = yearFilter.value || '—';
+  let list=payDB.all();
+  if(selectedStudentId) list=list.filter(p=>p.studentId===selectedStudentId);
+  const y=yearFilter.value; if(y) list=list.filter(p=>p.year===y);
+  
+function inferPaymentMonthName(paymentId){
+  const allocs = allocDB.all().filter(a => a.paymentId === paymentId);
+  if (!allocs.length) return '';
+  const chargesById = Object.fromEntries(chargeDB.all().map(c => [c.id, c]));
+  // πάρε την πρώτη (όλες πλέον είναι ίδιου μήνα)
+  const c = chargesById[allocs[0].chargeId];
+  return c?.monthLabel || '';
+}
+
+payTblBody.innerHTML = list.map(p => `
+  <tr data-id="${p.id}" class="${p.id===selectedPaymentId ? 'active' : ''}">
+    <td class="sel">
+      <input type="radio" class="paySelect" name="paySelect"
+             data-id="${p.id}" ${p.id===selectedPaymentId ? 'checked' : ''}>
+    </td>
+    <td>${fmtDate(p.date)}</td>
+    <td>${p.month || inferPaymentMonthName(p.id) || ''}</td>
+    <td>${(+p.amount||0).toFixed(2)}€</td>
+    <td>${p.method||''}</td>
+    <td><button class="btn light payViewBtn" data-id="${p.id}">Προβολή</button></td>
+  </tr>`).join('');
+
+if (selectedPaymentId && !list.some(x => x.id === selectedPaymentId)) {
+  selectedPaymentId = null;
+payReceiptBtn.disabled = true;    
+payDelBtn.disabled = true;
+}
+
+  const total=list.reduce((a,b)=>a+(+b.amount||0),0);
+  sumTotal.textContent=total.toFixed(2)+'€';
+  sumCount.textContent=String(list.length);
+  const last=list.slice().sort((a,b)=>new Date(b.date||0)-new Date(a.date||0))[0];
+  sumLast.textContent=last?fmtDate(last.date):'—';
+
+  payDelBtn.disabled=true;
+  payNewBtn.disabled=!selectedEnrollmentId;
+}
+
+payForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedEnrollmentId || !selectedStudentId) { alert('Επίλεξε εγγραφή.'); return; }
+
+  const rec = {
+    id: pf.id.value || uid(),
+    studentId: selectedStudentId,
+    enrollmentId: selectedEnrollmentId,
+    date: pf.date.value || new Date().toISOString().slice(0,10),
+    month: pf.month?.value || '',
+    amount: parseFloat(pf.amount.value || '0'),
+    method: pf.method.value || '',
+    reason: pf.reason.value || '',
+    notes: (pf.notes?.value || '').trim(),
+    year: yearFilter.value || academicYearFromDate(new Date()),
+    updated_at: new Date().toISOString()
+  };
+
+  if (!(rec.amount > 0)) { alert('Δώσε έγκυρο ποσό (>0).'); return; }
+
+  // === VALIDATION allocations ===
+  // Άθροισμα κατανομών δεν πρέπει να ξεπερνά το ποσό πληρωμής
+  const allocInputs = [...allocTbody.querySelectorAll('.allocAmount')];
+  let sumAlloc = allocInputs.reduce((s,inp)=> s + (parseFloat(inp.value||'0')||0), 0);
+  if (sumAlloc > rec.amount + 0.0001) {
+    alert('Οι κατανομές ξεπερνούν το ποσό πληρωμής.');
+    return;
+  }
+
+  // Save Payment
+  payDB.upsert(rec);
+  pf.id.value = rec.id;
+  payFormTitle.textContent = 'Επεξεργασία Πληρωμής';
+
+  // === Save Allocations (replace all for this payment) ===
+  const all = allocDB.all().filter(a => a.paymentId !== rec.id); // drop παλιές του ίδιου payment
+  const newAllocs = [];
+  allocInputs.forEach(inp => {
+    const amt = parseFloat(inp.value||'0') || 0;
+    if (amt <= 0) return;
+    const tr = inp.closest('tr');
+    const chargeId = tr?.dataset?.chargeId;
+    if (!chargeId) return;
+    newAllocs.push({
+      id: uid(),
+      paymentId: rec.id,
+      chargeId,
+      amount: amt,
+      created_at: new Date().toISOString()
+    });
+  });
+  allocDB.save(all.concat(newAllocs));
+
+  renderPayments();
+  renderCharges();  // ← ενημέρωση grid χρεώσεων/υπολοίπων
+  closeModal(payModal);
+});
+
+payTblBody.addEventListener('click', e => {
+  if (!e.target.classList.contains('payViewBtn')) return;
+
+  const id  = e.target.dataset.id;
+  const rec = payDB.all().find(x => x.id === id);
+  if (!rec) return;
+
+  selectedPaymentId = id;
+
+  // Γέμισμα φόρμας
+  pf.id.value     = rec.id;
+  pf.date.value   = toISO(rec.date);
+ if (pf.month) pf.month.value = rec.month || '';
+  pf.amount.value = rec.amount;
+  pf.method.value = rec.method || '';
+  pf.reason.value = rec.reason || '';
+if (pf.notes) pf.notes.value = rec.notes || '';
+
+  if (pf.batchId) pf.batchId.value = rec.batchId || '';
+
+  payFormTitle.textContent = 'Προβολή Πληρωμής';
+
+  // Visual επιλογή στη γραμμή + radio
+  const tr = e.target.closest('tr');
+  [...payTblBody.children].forEach(r => r.classList.remove('active'));
+  tr.classList.add('active');
+  const rb = tr.querySelector('.paySelect');
+  if (rb) rb.checked = true;
+payReceiptBtn.disabled = false;
+  payDelBtn.disabled = false;
+  disablePaymentForm(false);
+
+  // === Toggle UI ανάλογα με το αν είναι μαζική (έχει batchId) ===
+  if (rec.batchId) {
+    // Κρύψε Μήνα & Σχόλια (read-only modal)
+    if (payMonthWrap) payMonthWrap.style.display = 'none';
+    if (payNotesWrap) payNotesWrap.style.display = 'none';
+    if (pf.month) pf.month.disabled = true;
+
+    // Κρύψε actions (Αποθήκευση/Καθαρισμός)
+    if (payActions) payActions.style.display = 'none';
+
+    // Allocations: απόκρυψη editable, εμφάνιση read-only
+    if (typeof allocPanel !== 'undefined' && allocPanel) allocPanel.style.display = 'none';
+    if (typeof allocRoPanel !== 'undefined' && allocRoPanel) {
+      allocRoPanel.style.display = 'block';
+      renderAllocationsForPayment(rec.id, rec);
+    }
+  } else {
+    // Κανονική πληρωμή: δείξε όλα κανονικά
+    if (payMonthWrap) payMonthWrap.style.display = '';
+    if (payNotesWrap) payNotesWrap.style.display = '';
+    if (pf.month) pf.month.disabled = false;
+
+    if (payActions) payActions.style.display = '';
+
+    if (typeof allocRoPanel !== 'undefined' && allocRoPanel) allocRoPanel.style.display = 'none';
+    if (typeof allocPanel   !== 'undefined' && allocPanel) {
+      allocPanel.style.display = '';
+      buildAllocationUI(rec.id);
+    }
+  }
+
+  openModal(payModal);
+});
+
+payTblBody.addEventListener('click', e => {
+  const tr = e.target.closest('tr'); 
+  if (!tr) return;
+
+  // Αν πάτησες "Προβολή" ή το radio, μην κάνεις τίποτα εδώ
+  if (e.target.classList.contains('payViewBtn') || e.target.classList.contains('paySelect')) return;
+
+  selectedPaymentId = tr.dataset.id;
+
+  // visual + τσέκαρε το radio
+  [...payTblBody.children].forEach(r => r.classList.remove('active'));
+  tr.classList.add('active');
+  const rb = tr.querySelector('.paySelect');
+  if (rb) rb.checked = true;
+payReceiptBtn.disabled = false;
+  payDelBtn.disabled = false;
+  // δεν ανοίγουμε modal εδώ
+});
+
+payTblBody.addEventListener('change', e => {
+  if (!e.target.classList.contains('paySelect')) return;
+  const id = e.target.dataset.id;
+  selectedPaymentId = id;
+
+  // visual highlight
+  [...payTblBody.children].forEach(r => r.classList.remove('active'));
+  e.target.closest('tr').classList.add('active');
+payReceiptBtn.disabled = false;
+  payDelBtn.disabled = false;   // ενεργοποιεί Διαγραφή για την επιλεγμένη
+  // δεν ανοίγουμε modal εδώ
+});
+
+payDelBtn.addEventListener('click', () => {
+  if (!selectedPaymentId) return;
+
+  const allPays = payDB.all();
+  const rec = allPays.find(p => p.id === selectedPaymentId);
+  if (!rec) return;
+
+  const isBatch = !!rec.batchId;
+  const msg = isBatch
+    ? `Διαγραφή ΜΑΖΙΚΗΣ πληρωμής;\nBatch: ${rec.batchId}\n\nΘα διαγραφεί η πληρωμή και ΟΛΕΣ οι κατανομές της.`
+    : `Διαγραφή πληρωμής;\nΘα διαγραφεί η πληρωμή και οι κατανομές της.`;
+
+  if (!confirm(msg)) return;
+
+  // 1) σβήσε κατανομές αυτής της πληρωμής
+  const remainAlloc = allocDB.all().filter(a => a.paymentId !== rec.id);
+  allocDB.save(remainAlloc);
+
+  // 2) σβήσε την πληρωμή
+  const remainPays = allPays.filter(p => p.id !== rec.id);
+  payDB.save(remainPays);
+
+  // 3) UI reset
+  selectedPaymentId = null;
+payReceiptBtn.disabled = true;  
+payDelBtn.disabled = true;
+  if (payModal && payModal.classList.contains('open')) closeModal(payModal);
+
+  // 4) refresh πινάκων/υπολοίπων
+  renderPayments();
+  renderCharges();
+});
+
+delBtn.addEventListener('click', () => {
+  if (!selectedStudentId) return;
+  const s = db.all().find(x => x.id === selectedStudentId);
+  if (confirm(`Διαγραφή του/της ${s.surname} ${s.name}; Θα διαγραφούν επίσης όλες οι εγγραφές, πλάνα, χρεώσεις, πληρωμές κ.λπ.`)) {
+    // Students
+    db.remove(selectedStudentId);
+
+    // Enrollments & Payments
+    const remainEnr = enrDB.all().filter(e => e.studentId !== selectedStudentId); enrDB.save(remainEnr);
+    const remainPay = payDB.all().filter(p => p.studentId !== selectedStudentId);  payDB.save(remainPay);
+
+    // Plans
+    const remainPlans = planDB.all().filter(pl => pl.studentId !== selectedStudentId); planDB.save(remainPlans);
+
+    // Charges
+    const remainCharges = chargeDB.all().filter(c => c.studentId !== selectedStudentId); chargeDB.save(remainCharges);
+
+    // Allocations (κρατάμε μόνο όσα δείχνουν σε EXISTING payments & charges)
+    const existingPayments = new Set(payDB.all().map(p => p.id));
+    const existingCharges  = new Set(chargeDB.all().map(c => c.id));
+    const remainAlloc = allocDB.all().filter(a => existingPayments.has(a.paymentId) && existingCharges.has(a.chargeId));
+    allocDB.save(remainAlloc);
+
+    // Exams
+    const remainExams = examDB.all().filter(ex => ex.studentId !== selectedStudentId); examDB.save(remainExams);
+
+    // Documents
+    const remainDocs = docDB.all().filter(d => d.studentId !== selectedStudentId); docDB.save(remainDocs);
+
+    clearStudentForm();
+    renderStudents(q.value);
+    renderEnrollments();
+    renderPayments();
+    renderCharges();
+  }
+});
+
+// Άνοιγμα Mass Modal
+massPayBtn?.addEventListener('click', ()=>{
+  if (!selectedStudentId) { alert('Επίλεξε μαθητή από τη λίστα αριστερά.'); return; }
+  // defaults
+mp._batchId = genBatchId();           // ← ΝΕΟ: φρέσκο batch ανά άνοιγμα  
+mp.date.value = new Date().toISOString().slice(0,10);
+  mp.amount.value = '';
+  mp.amount.readOnly = true;   // ✅ κλείδωμα ποσού
+  mp.method.value = 'Μετρητά';
+  mp.reason.value = 'Μαζική εξόφληση διδάκτρων';
+
+  fillMonthSelect(mp.month);
+ // προεπιλογή: τρέχων μήνας (1..12)
+ mp.month.value = (new Date().getMonth() + 1).toString();
+ 
+  // ✅ Μηδενισμός του massDiscountInput
+  const discountInput = document.getElementById('massDiscountInput');
+  if (discountInput) discountInput.value = '';
+  resetMassInputs();
+  buildMassAllocationUI();
+  openModal(massPayModal);
+});
+
+massPayClose?.addEventListener('click', ()=> closeModal(massPayModal));
+massPayModal?.addEventListener('click', e => { if (e.target === massPayModal) closeModal(massPayModal); });
+
+
+ mp.amount.addEventListener('input', () => {
+   const payAmt = parseFloat(mp.amount.value || '0') || 0;
+   massAllocPayAmount.textContent = payAmt.toFixed(2) + '€';
+   recomputeMassTotals();
+});
+
+mp.month.addEventListener('change', ()=>{
+  // Προαιρετικά: αν έχεις ήδη resetMassInputs(), κάλεσέ το εδώ
+  if (typeof resetMassInputs === 'function') resetMassInputs();
+  buildMassAllocationUI();
+});
+
+
+massAllocTbody?.addEventListener('input', e => {
+  if (e.target.classList.contains('massAllocAmount')) {
+    recomputeMassTotals();
+  }
+});
+
+// ποσό γραμμής
+massAllocTbody.addEventListener('input', (e) => {
+  if (e.target && e.target.classList.contains('massAllocAmount')) {
+    recomputeMassTotals();
+  }
+});
+
+// επιλογή/αποεπιλογή χρέωσης
+massAllocTbody.addEventListener('change', (e) => {
+  if (e.target && e.target.classList.contains('mass-alloc-check')) {
+    // (προαιρετικό) αν ξε-τσεκάρεις, μηδένισε το ποσό της γραμμής για καθαρότητα
+    const tr = e.target.closest('tr[data-charge-id]');
+    const inp = tr?.querySelector('.massAllocAmount');
+    if (inp && !e.target.checked) inp.value = '0';
+    recomputeMassTotals();
+  }
+});
+
+function genBatchId(prefix='MP'){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+  return `${prefix}-${stamp}-${rand}`;
+}
+
+massAllocTbody?.addEventListener('change', e => {
+  if (!e.target.classList.contains('mass-alloc-check')) return;
+  const tr = e.target.closest('tr[data-charge-id]');
+  const inp = tr?.querySelector('.massAllocAmount');
+  if (!inp) return;
+
+  const max = parseFloat(inp.getAttribute('max') || '0') || 0;
+
+  // (προαιρετικό) βρες το μερίδιο έκπτωσης για αυτή τη χρέωση από το τρέχον πλάνο
+  const plan = computeMassDiscountPlan(massDiscountInput?.value);
+  const chargeId = tr?.dataset?.chargeId;
+  const share = plan?.[chargeId] || 0;
+  const fullAfterDiscount = Math.max(0, round2(max - share));
+
+  if (!e.target.checked) {
+    inp.dataset.prev = inp.value || '';
+    inp.value = '';
+    inp.disabled = true;
+    inp.readOnly = false;
+  } else {
+    inp.disabled = false;
+    inp.readOnly = true;                // ✅ δεν επιτρέπεται μερική αλλαγή
+    inp.value = fullAfterDiscount ? fullAfterDiscount.toFixed(2) : max.toFixed(2);
+  }
+  recomputeMassTotals();
+});
+
+
+massAllocAutoBtn?.addEventListener('click', massAutoFIFO);
+massAllocClearBtn?.addEventListener('click', clearMassAllocUI);
+
+// Submit: δημιουργεί 1 payment (enrollmentId=null) + allocations
+massPayForm.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!selectedStudentId) { alert('Επίλεξε μαθητή.'); return; }
+
+  const payAmt = parseFloat(mp.amount.value || '0') || 0;
+  if (!(payAmt > 0)) { alert('Δώσε έγκυρο ποσό (>0).'); return; }
+
+  // Υπολογίζει άθροισμα μόνο από ενεργά (μη-disabled) inputs
+  const activeInputs = [...massAllocTbody.querySelectorAll('.massAllocAmount:not([disabled])')];
+  const sumAlloc = activeInputs.reduce((s, inp) => s + (parseFloat(inp.value || '0') || 0), 0);
+  
+  // ✅ δεν επιτρέπεται μερική: απαιτούμε sumAlloc == payAmt (±0.01)
+  if (Math.abs(sumAlloc - payAmt) > 0.01) {
+    alert('Δεν επιτρέπεται μερική εξόφληση. Το άθροισμα κατανομών πρέπει να ισούται με το ποσό πληρωμής.');
+    return;
+  }
+
+  if (sumAlloc > payAmt + 0.0001) {
+    alert('Οι κατανομές ξεπερνούν το ποσό πληρωμής.');
+    return;
+  }
+
+// derive month index (1..12) από το dropdown και έτος από την ημερομηνία (ή τώρα)
+const mIdx = parseInt(mp.month.value || '0', 10);
+const yearNum = mp.date.value ? new Date(mp.date.value).getFullYear() : new Date().getFullYear();
+  const rec = {
+    id: uid(),
+    studentId: selectedStudentId,
+    enrollmentId: null, // μαζική, όχι δεμένη σε συγκεκριμένη εγγραφή
+    date: mp.date.value || new Date().toISOString().slice(0,10),
+    month: (mIdx >= 1 && mIdx <= 12) ? (MONTHS_GR[mIdx-1] + ' ' + yearNum) : '',
+    amount: payAmt,
+    method: mp.method.value || '',
+    reason: mp.reason.value || '',
+    notes: '',
+    year: yearFilter.value || null,
+    batchId: mp._batchId || genBatchId(),
+    discountTotal: parseFloat(massDiscountInput?.value || '0') || 0,
+
+    updated_at: new Date().toISOString()
+  };
+
+  // save payment
+  const allPays = payDB.all(); allPays.push(rec); payDB.save(allPays);
+
+
+  // save allocations: μόνο checked ΚΑΙ ενεργές (μη-disabled) σειρές με amount > 0
+  const keep = allocDB.all(); // διατηρούμε τα παλιά
+  const newAllocs = [];
+  [...massAllocTbody.querySelectorAll('tr[data-charge-id]')].forEach(tr => {
+    const chk = tr.querySelector('.mass-alloc-check');
+    const inp = tr.querySelector('.massAllocAmount');
+    if (!chk || !chk.checked || !inp || inp.disabled) return;
+
+    const val = parseFloat(inp.value || '0') || 0;
+    if (val <= 0) return;
+
+    const chargeId = tr.dataset.chargeId;
+    if (!chargeId) return;
+
+    newAllocs.push({
+      id: uid(),
+      paymentId: rec.id,
+      chargeId,
+      amount: val,
+      created_at: new Date().toISOString()
+    });
+  });
+  allocDB.save(keep.concat(newAllocs));
+
+  closeModal(massPayModal);
+  // ανανέωση πινάκων/υπολοίπων
+  renderPayments();
+  renderCharges(); // αν έχεις ανοιχτή εγγραφή, θα φανεί το updated status
+});
+
+document.getElementById('planForm')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.plan-charge-del');
+  if (!btn) return;
+
+  const id = btn.getAttribute('data-id');
+  const charge = chargeDB.all().find(c => c.id === id);
+  if (!charge) return;
+
+  // Ασφάλεια: μην σβήνεις αν έχει allocations
+  const paid = allocationSumForCharge(id);
+  if (paid > 0.0001) {
+    alert('Δεν μπορείς να διαγράψεις χρέωση που έχει ήδη πληρωμές/κατανομές.');
+    return;
+  }
+  if (charge.locked) {
+    alert('Η χρέωση είναι κλειδωμένη. Ξεκλείδωσέ την πρώτα.');
+    return;
+  }
+
+  if (!confirm('Διαγραφή της χρέωσης;')) return;
+
+  // Hard delete (ασφαλές γιατί δεν έχει allocations)
+  chargeDB.remove(id);
+
+  // Ανανεώσεις UI
+  renderPlanRealChargesInModal(); // μέσα στο modal
+  renderCharges();                // αν κάπου αλλού εμπιστεύεσαι τα ίδια δεδομένα
+});
+
+/* ======= Init ======= */
+function init(){
+  yearFilter.value=academicYears()[0];
+  cleanupOrphans();           // ← ΠΡΟΣΘΗΚΗ   
+  disableEnrollmentForm(true);
+  disablePaymentForm(true);
+  renderEnrollments();
+  renderPayments();
+  renderCharges(); // ΝΕΟ
+}
+init();
+
+// === Sidebar Toggle ===
+(function(){
+  const btn = document.getElementById('menuBtn');
+  const side = document.getElementById('sidebar');
+  const closeBtn = document.getElementById('sideClose');
+  const backdrop = document.getElementById('backdrop');
+
+  function openSide(){
+    side.classList.add('open');
+    backdrop.classList.add('show');
+    side.setAttribute('aria-hidden','false');
+  }
+  function closeSide(){
+    side.classList.remove('open');
+    backdrop.classList.remove('show');
+    side.setAttribute('aria-hidden','true');
+  }
+  btn && btn.addEventListener('click', ()=> side.classList.contains('open') ? closeSide() : openSide());
+  closeBtn && closeBtn.addEventListener('click', closeSide);
+  backdrop && backdrop.addEventListener('click', closeSide);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeSide(); });
+
+  // Menu actions
+  const goToTab = (tabId)=>{
+    const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+    if(btn){ btn.click(); }
+  };
+
+  document.querySelectorAll('.menu-link').forEach(a=>{
+    a.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const tab = a.getAttribute('data-tab');
+      const action = a.getAttribute('data-action');
+      if(tab) goToTab(tab);
+      if(action){
+        if(action==='backup'){
+          const btn = document.getElementById('backupBtn') || document.querySelector('[data-backup]');
+          if(btn) btn.click();
+        }else if(action==='restore'){
+          const inp = document.getElementById('importFile') || document.querySelector('input[type="file"]#importFile');
+          if(inp) inp.click();
+        }else if(action==='clear'){
+          const btn = document.getElementById('clearBtn') || document.querySelector('[data-clear]');
+          if(btn) btn.click();
+        }else if(action==='about'){
+          alert('Apollon — Τοπική εφαρμογή διαχείρισης (LocalStorage).');
+        }
+      }
+      closeSide();
+    });
+  });
+})();
+
+// === Simple Auth (LocalStorage) =============================================
+// Keys
+const LS_USERS = 'apollon_users';
+const LS_SESSION = 'apollon_session';
+
+// Helpers
+const readJSON = (k, fallback) => {
+  try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; }
+};
+const writeJSON = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+async function sha256(text){
+  const enc = new TextEncoder().encode(text);
+  const hashBuf = await crypto.subtle.digest('SHA-256', enc);
+  const bytes = Array.from(new Uint8Array(hashBuf));
+  return bytes.map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function getUsers(){ return readJSON(LS_USERS, []); }
+function setUsers(arr){ writeJSON(LS_USERS, arr); }
+function getSession(){ return readJSON(LS_SESSION, null); }
+function setSession(obj){ writeJSON(LS_SESSION, obj); }
+function clearSession(){ localStorage.removeItem(LS_SESSION); }
+
+async function ensureDefaultAdmin(){
+  let users = getUsers();
+  const exists = users.some(u => u.username === 'admin');
+  if(!exists){
+    users.push({ username:'admin', passHash: await sha256('1234') });
+    setUsers(users);
+  }
+}
+
+// UI elements
+const loginScreen = document.getElementById('loginScreen');
+const loginForm = document.getElementById('loginForm');
+const loginErr = document.getElementById('loginErr');
+const resetDefaultBtn = document.getElementById('resetDefaultBtn');
+const userNameSpan = document.getElementById('userName');
+const logoutBtn = document.getElementById('logoutBtn');
+
+function showLogin(){
+  loginScreen.classList.add('show');
+  loginScreen.setAttribute('aria-hidden','false');
+}
+function hideLogin(){
+  loginScreen.classList.remove('show');
+  loginScreen.setAttribute('aria-hidden','true');
+}
+
+async function doLogin(username, password){
+  const users = getUsers();
+  const user = users.find(u => u.username === username.trim());
+  if(!user) return false;
+  const passHash = await sha256(password);
+  if(user.passHash !== passHash) return false;
+  setSession({ user: user.username, ts: Date.now() });
+  return true;
+}
+
+function doLogout(){
+  clearSession();
+  userNameSpan.textContent = '—';
+  showLogin();
+}
+
+function updateHeaderUser(){
+  const sess = getSession();
+  userNameSpan.textContent = sess?.user ?? '—';
+}
+/* ====== Receipt printing (ΜΗ φορολογικό) ====== */
+const KEY_RECEIPT_SEQ = 'apollon_receipt_seq';
+
+function getNextReceiptNo(){
+  const y = new Date().getFullYear();
+  const obj = JSON.parse(localStorage.getItem(KEY_RECEIPT_SEQ) || '{}');
+  const seq = (obj[y] || 0) + 1;
+  obj[y] = seq;
+  localStorage.setItem(KEY_RECEIPT_SEQ, JSON.stringify(obj));
+  // Μορφή: YYYY-000123
+  return `${y}-${String(seq).padStart(6,'0')}`;
+}
+
+function formatMoney(n){
+  if (n == null || isNaN(n)) return '0,00€';
+  return new Intl.NumberFormat('el-GR', { style:'currency', currency:'EUR' }).format(Number(n));
+}
+
+function safeText(s){ return (s || '').toString().replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])); }
+
+function buildReceiptHTML({student, payment, allocs, mode='a5'}){
+  const S = getSettings() || {};
+
+  const amountGross = Number(payment.amount || 0); // ποσό πληρωμής όπως αποθηκεύτηκε (στις μαζικές = gross)
+  const method  = payment.method || payment.payMethod || '—';
+  const reason  = payment.reason || payment.payReason || 'Δίδακτρα';
+  const fullName= [student?.surname, student?.name].filter(Boolean).join(' ');
+  const address = [student?.address, student?.city].filter(Boolean).join(', ');
+
+  // Batch tail (τελευταία 4)
+  const batchId = (payment.batchId || payment.payBatchId || '').toString();
+  const batchTail = batchId ? batchId.slice(-4) : '';
+
+  // === Υπολογισμοί κατανομών & έκπτωσης ===
+  const allocSum = Array.isArray(allocs) ? allocs.reduce((s,a)=> s + (Number(a.covered ?? a.amount ?? 0) || 0), 0) : 0;
+  // Προτιμάμε ό,τι έχεις ήδη αποθηκεύσει στο payment (μαζική πληρωμή)
+  let discount = Number(payment.discountTotal || 0);
+  // Fallback: αν δεν υπάρχει, βγάλε τη διαφορά gross - allocations (μην πάει αρνητικό από σεντς)
+  if (!discount && amountGross > 0 && allocSum >= 0) {
+    const d = amountGross - allocSum;
+    if (d > 0.004) discount = Math.round(d * 100) / 100;
+  }
+
+  const finalTotal = Math.max(0, Math.round((amountGross - discount) * 100)/100);
+
+  // === Γραμμές πίνακα ===
+  let linesHTML = '';
+if (allocs && allocs.length) {
+  linesHTML = allocs.map(a => {
+    const desc = a.desc || 'Χρέωση';
+    const covered = Number(a.covered || 0);
+    const school = a.school && a.school !== '—' ? a.school : '';
+    return `<tr>
+      <td>
+        ${safeText(desc)}
+        ${school ? ` <span class="badge">${safeText(school)}</span>` : ``}
+      </td>
+      <td style="text-align:right;">${formatMoney(covered)}</td>
+    </tr>`;
+  }).join('');
+} else {
+  // χωρίς αναλυτικές κατανομές (δεν ξέρουμε σίγουρα σχολή) — αφήνουμε μόνο την περιγραφή
+  linesHTML = `<tr>
+    <td>${safeText(reason)}</td>
+    <td style="text-align:right;">${formatMoney(finalTotal || amountGross)}</td>
+  </tr>`;
+}
+
+
+  // Κλάση εκτύπωσης
+  const klass = mode === 'thermal' ? 'receipt thermal' : 'receipt';
+
+  return `
+  <div class="${klass}">
+    <div class="r-head">
+      <div>
+        <div><b>${safeText(S.companyName || 'Ωδείο')}</b></div>
+        <div class="muted">${safeText(S.address||'')} ${safeText(S.city||'')}</div>
+        <div class="muted">Τ: ${safeText(S.phone||'')} • E: ${safeText(S.email||'')}</div>
+        <div class="muted">ΑΦΜ: ${safeText(S.afm||'—')} • ΔΟΥ: ${safeText(S.doy||'—')}</div>
+      </div>
+      <div style="text-align:right">
+        <h1 class="r-title">Απόδειξη Είσπραξης</h1>
+        <div class="r-sub">ΜΗ ΦΟΡΟΛΟΓΙΚΟ ΣΤΟΙΧΕΙΟ</div>
+        <div class="r-sub">Δεν αντικαθιστά ΑΠΥ / Δεν υποβάλλεται στο MyDATA</div>
+        ${batchTail ? `<div class="r-sub">Κωδικός: ${safeText(batchTail)}</div>` : ``}
+      </div>
+    </div>
+
+    <div class="r-grid">
+      <div><b>Σπουδαστής:</b> ${safeText(fullName)}</div>
+      <div><b>Τρόπος:</b> ${safeText(method)}</div>
+      <div><b>Διεύθυνση:</b> ${safeText(address || '—')}</div>
+      <div><b>Συνολική χρέωση:</b> ${formatMoney(amountGross)}</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Περιγραφή</th><th style="text-align:right;">Ποσό</th></tr></thead>
+      <tbody>${linesHTML}
+        ${discount > 0 ? `
+          <tr>
+            <td class="muted">↳ Έκπτωση</td>
+            <td style="text-align:right;">-${formatMoney(discount)}</td>
+          </tr>` : ``}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td style="text-align:right;">Τελικό</td>
+          <td style="text-align:right;">${formatMoney(finalTotal || allocSum || amountGross)}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="r-foot">
+      <div class="muted">${safeText(S.footerNote || 'Σας ευχαριστούμε για την εξόφληση.')}</div>
+      <div class="muted">Έκδοση μέσω Apollon</div>
+    </div>
+  </div>`;
+}
+function printReceiptHTML(html){
+  const w = window.open('', '_blank');
+  if(!w){ alert('Παρακαλώ επιτρέψτε pop-ups για εκτύπωση.'); return; }
+  w.document.open();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8">
+    <title>Απόδειξη</title>
+    <style>${document.querySelector('style')?.innerHTML || ''}</style>
+  </head><body>${html}</body></html>`);
+  w.document.close(); w.focus();
+  w.onload = () => { try { w.print(); } finally { w.close(); } };
+}
+
+// ===== Wire-up: κουμπί "Απόδειξη" στο tab Πληρωμές =====
+const payReceiptBtn = document.getElementById('payReceiptBtn');
+
+async function getSelectedPayment(){
+  // βρίσκουμε active γραμμή στον #payTbl και φέρνουμε το αντικείμενο από payDB
+  const row = document.querySelector('#payTbl tbody tr.active');
+  if(!row) return null;
+  const pid = row.getAttribute('data-id'); // βεβαιώσου ότι βάζεις data-id στις γραμμές
+  if(!pid) return null;
+  return payDB.all().find(p => p.id === pid) || null;
+}
+
+function getCurrentStudent(){
+  const id = document.getElementById('id')?.value; // κρυφό input της φόρμας σπουδαστή
+  if(!id) return null;
+  return db.all().find(s => s.id === id) || null;
+}
+
+function collectAllocationsForPayment(paymentId){
+  // 1) Πάρε όλες τις κατανομές της πληρωμής
+  const allocs = allocDB.all().filter(a => a.paymentId === paymentId);
+
+  // 2) Maps για γρήγορη πρόσβαση σε charges & enrollments
+  const chargeMap = new Map(chargeDB.all().map(c => [c.id, c]));
+  const enrMap    = new Map(enrDB.all().map(e => [e.id, e]));
+
+  // 3) Επιστροφή enriched αντικειμένων: desc, covered, due, school
+  return allocs.map(a => {
+    const c   = chargeMap.get(a.chargeId) || {};
+    const enr = c.enrollmentId ? enrMap.get(c.enrollmentId) : null;
+
+    const desc    = c.description || c.desc || c.type || c.month || c.ym || 'Χρέωση';
+    const covered = Number(a.amount ?? a.cover ?? 0) || 0;
+    const due     = c.due || c.dueDate || '';
+    const school  = enr?.school || '—';   // ← ΣΧΟΛΗ από την εγγραφή
+
+    return { desc, covered, due, school };
+  });
+}
+
+
+payReceiptBtn?.addEventListener('click', () => {
+  const payment = (function(){ const p = window._lastSelectedPayment || null; return p; })() || null;
+
+  // fallback: προσπάθησε να πάρεις από την επιλεγμένη γραμμή
+  const run = async () => {
+    let pay = payment || await getSelectedPayment();
+    if(!pay){ alert('Επίλεξε πρώτα μία πληρωμή.'); return; }
+    const student = getCurrentStudent();
+    const allocs = collectAllocationsForPayment(pay.id);
+    const html = buildReceiptHTML({ student, payment: pay, allocs, mode:'a5' /* ή 'thermal' */ });
+    printReceiptHTML(html);
+  };
+  run();
+});
+
+// Init
+(async function authInit(){
+  await ensureDefaultAdmin();
+  updateHeaderUser();
+  if(!getSession()){ showLogin(); }
+})();
+
+// Events
+loginForm?.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  loginErr.classList.remove('show');
+  const fd = new FormData(loginForm);
+  const user = fd.get('username');
+  const pass = fd.get('password');
+  const ok = await doLogin(String(user||''), String(pass||''));
+  if(ok){
+    hideLogin();
+    updateHeaderUser();
+  }else{
+    loginErr.classList.add('show');
+  }
+});
+
+function trapFocus(modalEl){
+  const focusable = modalEl.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+  const first = focusable[0], last = focusable[focusable.length-1];
+  function loop(e){
+    if(e.key!=='Tab') return;
+    if(e.shiftKey && document.activeElement===first){ last.focus(); e.preventDefault(); }
+    else if(!e.shiftKey && document.activeElement===last){ first.focus(); e.preventDefault(); }
+  }
+  modalEl.addEventListener('keydown', loop);
+  return ()=> modalEl.removeEventListener('keydown', loop);
+}
+
+// wrap τα open/close
+function openModal(m){
+  m.classList.add('open'); m.setAttribute('aria-hidden','false');
+  const undoTrap = trapFocus(m); m._undoTrap = undoTrap;
+  // focus στο πρώτο focusable
+  setTimeout(()=> m.querySelector('input,button,select,textarea,[tabindex]')?.focus(), 0);
+  const onEsc = (e)=>{ if(e.key==='Escape') closeModal(m); };
+  m._onEsc = onEsc; document.addEventListener('keydown', onEsc);
+}
+function closeModal(m){
+  m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+  m._undoTrap?.(); document.removeEventListener('keydown', m._onEsc);
+}
+
+resetDefaultBtn?.addEventListener('click', async ()=>{
+  // Επαναφέρει/δημιουργεί admin/1234 (αν δεν υπάρχει ή για δοκιμή)
+  let users = getUsers().filter(u => u.username !== 'admin');
+  users.push({ username:'admin', passHash: await sha256('1234') });
+  setUsers(users);
+  alert('Ο χρήστης admin/1234 είναι έτοιμος.');
+});
+
+logoutBtn?.addEventListener('click', ()=>{
+  if(confirm('Αποσύνδεση;')) doLogout();
+});
+
+// Προαιρετικό: logout
+
+</script>
+<script>
+(function(){
+  const SETTINGS_KEY = 'apollon_settings';
+
+  /* ---------- helpers ---------- */
+  function money(x){ return (Number(x||0)).toFixed(2) + '€'; }
+  function asStr(x){ return x == null ? '' : String(x); }
+
+  function getSettings(){
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); }
+    catch { return {}; }
+  }
+
+  // Υπολογισμός κατάστασης χρέωσης από κατανομές/πληρωμές
+  function getStatus(charge){
+    const allocs = (JSON.parse(localStorage.getItem('apollon_allocations')||'[]')||[])
+      .filter(a => String(a.chargeId) === String(charge.id))
+      .reduce((s,a)=> s + (Number(a.amount)||0), 0);
+    const due = Number(charge.amount)||0;
+    if (allocs <= 0) return 'Ανοιχτό';
+    if (allocs < due) return 'Μερικώς';
+    return 'Εξοφλημένο';
+  }
+
+  // Βρες με ασφάλεια ποιος σπουδαστής είναι επιλεγμένος
+  function getSelectedStudentId(){
+    try {
+      if (typeof selectedStudentId !== 'undefined' && selectedStudentId) {
+        return selectedStudentId;
+      }
+    } catch(e){}
+    const hid = document.getElementById('id');
+    if (hid && hid.value) return hid.value;
+    const activeRow = document.querySelector('#tbl tbody tr.active');
+    if (activeRow && activeRow.dataset && activeRow.dataset.id) return activeRow.dataset.id;
+    return null;
+  }
+
+  /* ---------- HTML Report ---------- */
+  function buildReportHTML(studentId, year){
+    const sid = asStr(studentId).trim();
+    const yr  = year ? asStr(year).trim() : '';
+
+    const students = JSON.parse(localStorage.getItem('apollon_students')||'[]')||[];
+    const st = students.find(s => asStr(s.id) === sid);
+
+    const enr = (JSON.parse(localStorage.getItem('apollon_enrollments')||'[]')||[])
+      .filter(e => asStr(e.studentId) === sid && (!yr || asStr(e.year) === yr));
+
+    const charges = (JSON.parse(localStorage.getItem('apollon_charges')||'[]')||[])
+      .filter(c => asStr(c.studentId) === sid && (!yr || asStr(c.year) === yr))
+      .sort((a,b)=>(a.ym||'').localeCompare(b.ym||''));
+
+    const pays = (JSON.parse(localStorage.getItem('apollon_payments')||'[]')||[])
+      .filter(p => asStr(p.studentId) === sid && (!yr || asStr(p.year) === yr))
+      .sort((a,b)=>new Date(a.date||0)-new Date(b.date||0));
+
+    const S = getSettings();
+    const today = new Date().toISOString().slice(0,10);
+
+    const enrollRows = enr.map(e=>`
+      <tr>
+        <td>${e.year||''}</td>
+        <td>${e.school||''}</td>
+        <td>${e.className||e.class||''}</td>
+        <td>${e.teacher||''}</td>
+        <td>${e.enrDate||e.regDate||''}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="muted">—</td></tr>`;
+
+    const chargeRows = charges.map(c=>`
+      <tr>
+        <td>${c.monthLabel||''} ${(c.ym||'').slice(0,4)}</td>
+        <td>${c.description||''}</td>
+        <td>${c.dateDue||''}</td>
+        <td>${money(c.amount)}</td>
+        <td>${getStatus(c)}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="muted">—</td></tr>`;
+
+    const payRows = pays.map(p=>`
+      <tr>
+        <td>${p.date||''}</td>
+        <td>${p.month||''}</td>
+        <td>${money(p.amount)}</td>
+        <td>${p.method||''}</td>
+        <td>${p.reason||''}</td>
+      </tr>`).join('') || `<tr><td colspan="5" class="muted">—</td></tr>`;
+
+    const gdprBlock = `
+      <div class="grid">
+        <div>
+          <h2>GDPR</h2>
+          <p>Ο/Η σπουδαστής/τρια δηλώνει ότι ενημερώθηκε για την επεξεργασία προσωπικών δεδομένων
+          και παρέχει τη συγκατάθεσή του/της όπου απαιτείται.</p>
+          <p class="muted">[ ] Έχει δηλωθεί συγκατάθεση • Ημερομηνία: ______ • Τρόπος: ______</p>
+        </div>
+        <div>
+          <h2>Υπογραφές</h2>
+          <p>Σπουδαστής/Κηδεμόνας: ______________________</p>
+          <p>Εκ μέρους της σχολής: ______________________</p>
+        </div>
+      </div>`;
+
+    if(!st){
+      return `<div class="report"><h1>Βεβαίωση/Απόσπασμα</h1><p>Δεν βρέθηκε σπουδαστής (${sid}).</p></div>`;
+    }
+
+    return `
+    <div class="report">
+      <h1>Βεβαίωση/Απόσπασμα Μητρώου Σπουδαστή</h1>
+
+      <div class="grid">
+        <div>
+          <h2>Επιχείρηση</h2>
+          <p><b>${S.companyName||'—'}</b><br>
+          ΑΦΜ: ${S.afm||'—'}, ΔΟΥ: ${S.doy||'—'}<br>
+          ${S.address||''} ${S.city||''}<br>
+          Τ: ${S.phone||''} • E: ${S.email||''}</p>
+        </div>
+        <div>
+          <h2>Στοιχεία Έκδοσης</h2>
+          <p>Ημ/νία: ${today}<br>
+          Διδακτικό έτος: ${yr || '—'}<br>
+          Χρήστης: ${document.getElementById('userName')?.textContent||'—'}</p>
+        </div>
+      </div>
+
+      <h2>Σπουδαστής</h2>
+      <table>
+        <tr><td><b>Ονοματεπώνυμο</b></td><td>${(st.surname||'')+' '+(st.name||'')}</td></tr>
+        <tr><td><b>Ημ/νία γέννησης</b></td><td>${st.dob||'—'}</td></tr>
+        <tr><td><b>Τόπος γέννησης</b></td><td>${st.birthPlace||'—'}</td></tr>
+        <tr><td><b>ΑΜΚΑ</b></td><td>${st.amka||'—'}</td></tr>
+        <tr><td><b>Διεύθυνση</b></td><td>${st.address||'—'}, ${st.city||''}</td></tr>
+        <tr><td><b>Τηλέφωνο / Email</b></td><td>${st.phone||'—'} • ${st.email||'—'}</td></tr>
+      </table>
+
+      <h2>Εγγραφές (${yr||'όλα'})</h2>
+      <table>
+        <thead><tr><th>Έτος</th><th>Σχολή</th><th>Τάξη</th><th>Διδάσκων</th><th>Εγγραφή</th></tr></thead>
+        <tbody>${enrollRows}</tbody>
+      </table>
+
+      <h2>Οικονομικές Υποχρεώσεις</h2>
+      <table>
+        <thead><tr><th>Μήνας</th><th>Περιγραφή</th><th>Λήξη</th><th>Ποσό</th><th>Κατάσταση</th></tr></thead>
+        <tbody>${chargeRows}</tbody>
+      </table>
+
+      <h2>Πληρωμές</h2>
+      <table>
+        <thead><tr><th>Ημ/νία</th><th>Μήνας</th><th>Ποσό</th><th>Τρόπος</th><th>Αιτιολογία</th></tr></thead>
+        <tbody>${payRows}</tbody>
+      </table>
+
+      ${gdprBlock}
+
+      <p class="meta">Παράχθηκε από το Apollon (Local Storage app).</p>
+    </div>`;
+  }
+
+  // 🔑 ΕΞΑΓΩ ΤΙΣ ΣΥΝΑΡΤΗΣΕΙΣ ΣΤΟ window (αυτό είναι το Βήμα 1)
+  window.buildReportHTML = buildReportHTML;
+  window.getSelectedStudentId = getSelectedStudentId; // προαιρετικό
+
+})(); // <-- μόνο αυτό το κλείσιμο χρειάζεται
+</script>
+<script>
+// 1) Βάλε αυτό το helper ΚΑΠΟΥ πάνω από τον handler
+function safePrint(html){
+  const w = window.open('', '_blank');
+  if(!w){ alert('Παρακαλώ επιτρέψτε pop-ups για να εξαχθεί το PDF.'); return; }
+  w.document.open();
+  w.document.write(`<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>PDF Report</title>
+      <style>
+        @page { size: A4; margin: 16mm; }
+        body { margin: 0; font: 12pt/1.35 system-ui; color:#111; }
+        .report h1 { font-size:18pt; margin:0 0 8pt }
+        .report h2 { font-size:13pt; margin:12pt 0 6pt; }
+        .report table { width:100%; border-collapse:collapse; margin:6pt 0 }
+        .report th, .report td { border-bottom:1px solid #eee; padding:6pt 4pt; font-size:10pt; text-align:left }
+        .report .muted { color:#666 }
+        .report .grid { display:grid; grid-template-columns:1fr 1fr; gap:8pt }
+        .report .meta { font-size:9pt; color:#666; margin-top:6pt }
+        .report table { page-break-inside:auto }
+        .report tr    { page-break-inside:avoid; page-break-after:auto }
+        .report h2    { page-break-after:avoid }
+      </style>
+    </head>
+    <body>${html}</body>
+  </html>`);
+  w.document.close();
+  w.focus();
+  w.onload = () => { 
+    try { w.print(); } finally { w.close(); }
+  };
+}
+
+// 2) Αντικατάστησε ΟΛΟ τον παλιό click handler με αυτόν:
+document.addEventListener('click', (e)=>{
+  if(e.target && e.target.id==='pdfBtn'){
+    e.preventDefault();
+    e.stopPropagation();
+
+    // πάρε με ασφάλεια το επιλεγμένο id (χρησιμοποίησε τη δική σου getSelectedStudentId αν την έχεις)
+    const sid = (typeof getSelectedStudentId === 'function'
+                  ? String(getSelectedStudentId()||'').trim()
+                  : String(window.selectedStudentId||document.getElementById('id')?.value||'').trim());
+    if(!sid){ alert('Επίλεξε σπουδαστή.'); return; }
+
+    const year = String(document.getElementById('yearFilter')?.value ?? '').trim();
+
+    // φτιάξε το περιεχόμενο
+    const html = window.buildReportHTML(sid, year);
+
+
+    // χρήσιμο log για να βεβαιωθούμε ότι δεν είναι κενό
+    try { console.log('PDF preview:', {sid, year, len: html.length}); } catch(e){}
+
+    // τύπωσε από ξεχωριστό, καθαρό παράθυρο
+    safePrint(html);
+  }
+});
+</script>
+
+
+</body>
+</html>
